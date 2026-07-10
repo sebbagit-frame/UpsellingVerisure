@@ -11,13 +11,18 @@ export async function middleware(solicitud: NextRequest) {
   }
 
   const tokenSesion = solicitud.cookies.get(NOMBRE_COOKIE_SESION)?.value;
-  const sesionValida = tokenSesion
+  const rolSesion = tokenSesion
     ? await verificarTokenSesion(tokenSesion)
-    : false;
+    : null;
 
-  if (!sesionValida) {
-    const urlLogin = new URL("/login", solicitud.url);
-    return NextResponse.redirect(urlLogin);
+  if (!rolSesion) {
+    return NextResponse.redirect(new URL("/login", solicitud.url));
+  }
+
+  // Las rutas de administración exigen rol admin; una sesión de sector
+  // válida vuelve al inicio en lugar del login
+  if (pathname.startsWith("/admin") && rolSesion !== "admin") {
+    return NextResponse.redirect(new URL("/", solicitud.url));
   }
 
   return NextResponse.next();

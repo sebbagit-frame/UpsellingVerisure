@@ -36,6 +36,7 @@ app/
 ├── login/page.tsx          → formulario de contraseña única
 ├── dispositivos/page.tsx   → catálogo de dispositivos
 ├── instructivos/page.tsx   → listado de PDFs
+├── admin/page.tsx          → panel de administración (solo rol admin)
 └── api/
     ├── login/route.ts      → valida contraseña, setea cookie de sesión
     └── logout/route.ts     → borra la cookie
@@ -69,7 +70,8 @@ El proyecto exige estas variables (en Vercel o en `.env.local` local):
 
 | Variable | Descripción |
 |----------|-------------|
-| `SITE_PASSWORD` | Contraseña única de acceso al sitio, compartida por todo el sector |
+| `SITE_PASSWORD` | Contraseña compartida del sector (rol `sector`, solo lectura) |
+| `ADMIN_PASSWORD` | Contraseña de administrador (rol `admin`, acceso a `/admin` con permisos de escritura) |
 | `SESSION_SECRET` | Secreto para firmar el token de sesión (generar con `openssl rand -hex 32`) |
 | `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anónima de Supabase (solo lectura pública) |
@@ -95,7 +97,11 @@ Imágenes y PDFs se guardan en Supabase Storage; las tablas solo referencian la 
 - Cookie `httpOnly`, `secure` en producción, `sameSite lax`, con token firmado (HMAC-SHA256)
 - Sesión expira a los 30 días
 - `middleware.ts` valida la cookie en cada request; sin sesión válida, redirige a `/login`
-- No hay roles ni usuarios: cualquiera con la contraseña del sector accede a todo el sitio por igual
+- **Dos niveles de acceso**, ambos por contraseña compartida (sin usuarios individuales):
+  - Rol `sector` (`SITE_PASSWORD`): solo lectura, acceso a todo el sitio salvo `/admin`
+  - Rol `admin` (`ADMIN_PASSWORD`): además accede a `/admin` con permisos de escritura
+- Ambas contraseñas entran por el mismo campo del login; el rol se asigna según cuál coincida
+- El token firmado incluye el rol; el middleware exige rol `admin` para las rutas `/admin/*` (una sesión de sector es redirigida a `/`)
 
 ---
 
@@ -131,7 +137,8 @@ Imágenes y PDFs se guardan en Supabase Storage; las tablas solo referencian la 
 |--------------|--------|
 | Scaffold Next.js + Tailwind + estructura base | ✅ Completo |
 | Sistema de acceso con contraseña única (middleware, login, cookie de sesión) | ✅ Completo |
-| Conexión a Supabase (`lib/supabase.ts`) | ⏳ Pendiente |
+| Roles de acceso `sector` / `admin` y protección de `/admin` | ✅ Completo |
+| Conexión a Supabase (`lib/supabase.ts`) | ✅ Completo |
 | Página Inicio (matrículas, internos, sectores) | ⏳ Pendiente |
 | Página Dispositivos | ⏳ Pendiente |
 | Página Instructivos | ⏳ Pendiente |
@@ -141,6 +148,6 @@ Imágenes y PDFs se guardan en Supabase Storage; las tablas solo referencian la 
 
 ## Seguridad — notas
 
-- `SITE_PASSWORD` y `SESSION_SECRET` **no** van en el repo: solo en variables de entorno (Vercel o `.env.local`, incluido en `.gitignore`)
+- `SITE_PASSWORD`, `ADMIN_PASSWORD` y `SESSION_SECRET` **no** van en el repo: solo en variables de entorno (Vercel o `.env.local`, incluido en `.gitignore`)
 - La cookie de sesión es `httpOnly`, no accesible desde JavaScript del navegador
 - Al no haber usuarios individuales, no hay trazabilidad de quién accede — si en el futuro se necesita auditoría, requiere rediseñar el sistema de acceso (fuera del alcance actual)
