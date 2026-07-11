@@ -44,11 +44,13 @@ components/
 ├── Navbar.tsx
 ├── LogoutButton.tsx
 ├── TablaOperadores.tsx
-├── CardDispositivo.tsx
+├── CatalogoDispositivos.tsx → selector de sistema + buscador + grilla (cliente)
+├── CardDispositivo.tsx      → tarjeta expandible de un dispositivo
 └── ListaInstructivos.tsx
 lib/
 ├── session.ts              → firma/verifica el token de sesión
-└── supabase.ts              → cliente de conexión a Supabase
+├── supabase.ts             → cliente de conexión a Supabase
+└── tipos.ts                → tipos compartidos (Dispositivo, SistemaAlarma)
 middleware.ts                → protege todas las rutas salvo /login y /api/login
 ```
 
@@ -84,7 +86,7 @@ El proyecto exige estas variables (en Vercel o en `.env.local` local):
 
 **operadores** — id, nombre_completo, matricula, interno, sector_id (FK → sectores), activo (bool)
 
-**dispositivos** — id, nombre, imagen_url, categoria, caracteristicas, descripcion
+**dispositivos** — id, nombre_dispositivo, nomenclatura (código corto, ej. "YR", opcional), imagen_url (opcional), categoria, caracteristicas, descripcion, sistema (`'Verifast'` | `'Presense'`)
 
 **instructivos** — id, titulo, pdf_url, dispositivo_id (FK → dispositivos, opcional), fecha_subida
 
@@ -140,7 +142,7 @@ Imágenes y PDFs se guardan en Supabase Storage; las tablas solo referencian la 
 | Roles de acceso `sector` / `admin` y protección de `/admin` | ✅ Completo |
 | Conexión a Supabase (`lib/supabase.ts`) | ✅ Completo |
 | Página Inicio (matrículas, internos, sectores) | ⏳ Pendiente |
-| Página Dispositivos | ⏳ Pendiente |
+| Página Dispositivos (selector Verifast/Presense, buscador, tarjetas expandibles) | ✅ Completo |
 | Página Instructivos | ⏳ Pendiente |
 | Deploy a Vercel | ⏳ Pendiente |
 
