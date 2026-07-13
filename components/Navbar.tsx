@@ -1,5 +1,6 @@
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
+import { RolSesion } from "@/lib/session";
 
 const links = [
   { href: "/", label: "Inicio" },
@@ -7,7 +8,11 @@ const links = [
   { href: "/instructivos", label: "Instructivos" },
 ];
 
-export default function Navbar() {
+interface Props {
+  rolSesion: RolSesion | null;
+}
+
+export default function Navbar({ rolSesion }: Props) {
   return (
     <nav className="border-b border-gray-200 bg-white">
       <div className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-3">
@@ -20,6 +25,14 @@ export default function Navbar() {
             {link.label}
           </Link>
         ))}
+        {rolSesion === "admin" && (
+          <Link
+            href="/admin"
+            className="text-sm font-semibold text-amber-700 hover:text-amber-900"
+          >
+            Administración
+          </Link>
+        )}
         <div className="ml-auto">
           <LogoutButton />
         </div>

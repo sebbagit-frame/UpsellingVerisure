@@ -15,11 +15,22 @@ export async function middleware(solicitud: NextRequest) {
     ? await verificarTokenSesion(tokenSesion)
     : null;
 
+  // Las rutas de API de administración responden en JSON, sin redirecciones
+  if (pathname.startsWith("/api/admin")) {
+    if (rolSesion !== "admin") {
+      return NextResponse.json(
+        { error: "Se requiere sesión de administrador" },
+        { status: 401 }
+      );
+    }
+    return NextResponse.next();
+  }
+
   if (!rolSesion) {
     return NextResponse.redirect(new URL("/login", solicitud.url));
   }
 
-  // Las rutas de administración exigen rol admin; una sesión de sector
+  // Las páginas de administración exigen rol admin; una sesión de sector
   // válida vuelve al inicio en lugar del login
   if (pathname.startsWith("/admin") && rolSesion !== "admin") {
     return NextResponse.redirect(new URL("/", solicitud.url));

@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageOff } from "lucide-react";
 import { Dispositivo } from "@/lib/tipos";
 
 interface Props {
@@ -17,25 +18,28 @@ export default function CardDispositivo({
     <article
       onClick={alAlternar}
       className={`cursor-pointer overflow-hidden rounded-lg border bg-white shadow-sm transition hover:shadow-md ${
-        expandido ? "border-gray-400 sm:col-span-2 lg:col-span-3" : "border-gray-200"
+        expandido ? "border-gray-400 sm:col-span-2" : "border-gray-200"
       }`}
     >
-      <div className="flex h-40 items-center justify-center bg-gray-100">
+      <div className="flex h-[270px] items-center justify-center bg-gray-100">
         {dispositivo.imagen_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={dispositivo.imagen_url}
             alt={dispositivo.nombre_dispositivo}
-            className="h-full w-full object-contain"
+            className="h-full w-full object-cover object-center"
           />
         ) : (
-          <span className="text-sm text-gray-400">Sin imagen</span>
+          <div className="flex flex-col items-center gap-2 text-gray-400">
+            <ImageOff className="h-10 w-10" strokeWidth={1.5} />
+            <span className="text-sm">Sin imagen</span>
+          </div>
         )}
       </div>
 
-      <div className="p-4">
+      <div className="p-5">
         <div className="flex items-start justify-between gap-2">
-          <h2 className="text-base font-semibold">
+          <h2 className="text-lg font-semibold">
             {dispositivo.nombre_dispositivo}
             {dispositivo.nomenclatura && (
               <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs font-mono font-medium text-white align-middle">

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { Dispositivo, SistemaAlarma } from "@/lib/tipos";
 import CardDispositivo from "@/components/CardDispositivo";
 
@@ -9,17 +10,46 @@ const SISTEMAS: { nombre: SistemaAlarma; descripcion: string }[] = [
   { nombre: "Presense", descripcion: "Sistema de alarma Presense" },
 ];
 
-interface Props {
-  dispositivos: Dispositivo[];
-}
-
-export default function CatalogoDispositivos({ dispositivos }: Props) {
+export default function CatalogoDispositivos() {
+  const [dispositivos, setDispositivos] = useState<Dispositivo[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [errorDeCarga, setErrorDeCarga] = useState(false);
   const [sistemaSeleccionado, setSistemaSeleccionado] =
     useState<SistemaAlarma | null>(null);
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [dispositivoExpandidoId, setDispositivoExpandidoId] = useState<
     number | null
   >(null);
+
+  // Los datos se consultan al montar el componente: cada vez que se entra
+  // a la pantalla se trae el catálogo fresco, sin cachés intermedios
+  useEffect(() => {
+    let componenteActivo = true;
+
+    async function cargarDispositivos() {
+      const { data, error } = await supabase
+        .from("dispositivos")
+        .select(
+          "id, nombre_dispositivo, nomenclatura, imagen_url, categoria, caracteristicas, descripcion, sistema"
+        )
+        .order("nombre_dispositivo");
+
+      if (!componenteActivo) {
+        return;
+      }
+      if (error) {
+        setErrorDeCarga(true);
+      } else {
+        setDispositivos((data ?? []) as Dispositivo[]);
+      }
+      setCargando(false);
+    }
+
+    cargarDispositivos();
+    return () => {
+      componenteActivo = false;
+    };
+  }, []);
 
   const dispositivosDelSistema = useMemo(
     () =>
@@ -49,6 +79,18 @@ export default function CatalogoDispositivos({ dispositivos }: Props) {
     setSistemaSeleccionado(null);
     setTerminoBusqueda("");
     setDispositivoExpandidoId(null);
+  }
+
+  if (cargando) {
+    return <p className="text-gray-600">Cargando dispositivos...</p>;
+  }
+
+  if (errorDeCarga) {
+    return (
+      <p className="text-red-600">
+        No se pudieron cargar los dispositivos. Intentá de nuevo más tarde.
+      </p>
+    );
   }
 
   // Vista inicial: selector de sistema
@@ -128,7 +170,7 @@ export default function CatalogoDispositivos({ dispositivos }: Props) {
               No se encontraron dispositivos con ese nombre.
             </p>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2">
               {dispositivosFiltrados.map((dispositivo) => (
                 <CardDispositivo
                   key={dispositivo.id}
