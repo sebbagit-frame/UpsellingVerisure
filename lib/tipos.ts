@@ -21,5 +21,6 @@ export interface Dispositivo {
   categoria: string | null;
   caracteristicas: string | null;
   descripcion: string | null;
+  speech: string | null;
   sistema: SistemaAlarma;
 }

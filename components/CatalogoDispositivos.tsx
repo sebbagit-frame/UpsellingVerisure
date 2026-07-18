@@ -30,7 +30,7 @@ export default function CatalogoDispositivos() {
       const { data, error } = await supabase
         .from("dispositivos")
         .select(
-          "id, nombre_dispositivo, nomenclatura, imagen_url, categoria, caracteristicas, descripcion, sistema"
+          "id, nombre_dispositivo, nomenclatura, imagen_url, categoria, caracteristicas, descripcion, speech, sistema"
         )
         .order("nombre_dispositivo");
 

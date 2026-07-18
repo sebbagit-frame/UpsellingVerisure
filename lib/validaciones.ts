@@ -8,6 +8,7 @@ export interface DatosDispositivo {
   categoria: string | null;
   caracteristicas: string | null;
   descripcion: string | null;
+  speech: string | null;
   imagen_url: string | null;
   sistema: SistemaAlarma;
 }
@@ -32,6 +33,7 @@ export function validarDatosDispositivo(
     categoria,
     caracteristicas,
     descripcion,
+    speech,
     imagen_url,
     sistema,
   } = cuerpo as Record<string, unknown>;
@@ -53,6 +55,7 @@ export function validarDatosDispositivo(
       categoria: normalizarTextoOpcional(categoria),
       caracteristicas: normalizarTextoOpcional(caracteristicas),
       descripcion: normalizarTextoOpcional(descripcion),
+      speech: normalizarTextoOpcional(speech),
       imagen_url: normalizarTextoOpcional(imagen_url),
       sistema: sistema as SistemaAlarma,
     },

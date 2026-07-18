@@ -10,6 +10,7 @@ interface FormularioDispositivo {
   categoria: string;
   caracteristicas: string;
   descripcion: string;
+  speech: string;
   sistema: SistemaAlarma;
 }
 
@@ -19,6 +20,7 @@ const FORMULARIO_VACIO: FormularioDispositivo = {
   categoria: "",
   caracteristicas: "",
   descripcion: "",
+  speech: "",
   sistema: "Verifast",
 };
 
@@ -77,6 +79,7 @@ export default function AdminDispositivosPage() {
       categoria: dispositivo.categoria ?? "",
       caracteristicas: dispositivo.caracteristicas ?? "",
       descripcion: dispositivo.descripcion ?? "",
+      speech: dispositivo.speech ?? "",
       sistema: dispositivo.sistema,
     });
     setImagenActualUrl(dispositivo.imagen_url);
@@ -352,6 +355,21 @@ export default function AdminDispositivosPage() {
               className={claseInput}
             />
           </div>
+        </div>
+
+        <div className="mt-3">
+          <label htmlFor="speech" className={claseLabel}>
+            Speech (guion para la conversación con el cliente)
+          </label>
+          <textarea
+            id="speech"
+            rows={4}
+            value={formulario.speech}
+            onChange={(evento) =>
+              setFormulario({ ...formulario, speech: evento.target.value })
+            }
+            className={claseInput}
+          />
         </div>
 
         <div className="mt-3">

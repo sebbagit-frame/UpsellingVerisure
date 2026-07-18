@@ -6,7 +6,7 @@ export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("dispositivos")
     .select(
-      "id, nombre_dispositivo, nomenclatura, imagen_url, categoria, caracteristicas, descripcion, sistema"
+      "id, nombre_dispositivo, nomenclatura, imagen_url, categoria, caracteristicas, descripcion, speech, sistema"
     )
     .order("nombre_dispositivo");
 

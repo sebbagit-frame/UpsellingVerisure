@@ -74,7 +74,17 @@ export default function CardDispositivo({
                 </p>
               </div>
             )}
-            {!dispositivo.caracteristicas && !dispositivo.descripcion && (
+            {dispositivo.speech && (
+              <div className="rounded-md border border-sky-200 bg-sky-50 p-3">
+                <h3 className="mb-1 font-semibold text-sky-900">Speech</h3>
+                <p className="whitespace-pre-line text-sky-800">
+                  {dispositivo.speech}
+                </p>
+              </div>
+            )}
+            {!dispositivo.caracteristicas &&
+              !dispositivo.descripcion &&
+              !dispositivo.speech && (
               <p className="text-gray-500">
                 Este dispositivo no tiene detalles cargados.
               </p>

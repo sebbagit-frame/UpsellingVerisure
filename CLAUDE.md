@@ -105,7 +105,7 @@ El proyecto exige estas variables (en Vercel o en `.env.local` local):
 
 **operadores** — id, nombre_operador, matricula, interno (opcional)
 
-**dispositivos** — id, nombre_dispositivo, nomenclatura (código corto, ej. "YR", opcional), imagen_url (opcional), categoria, caracteristicas, descripcion, sistema (`'Verifast'` | `'Presense'`)
+**dispositivos** — id, nombre_dispositivo, nomenclatura (código corto, ej. "YR", opcional), imagen_url (opcional), categoria, caracteristicas, descripcion, speech (guion para la conversación con el cliente, opcional), sistema (`'Verifast'` | `'Presense'`)
 
 **instructivos** — id, titulo, pdf_url, dispositivo_id (FK → dispositivos, opcional), fecha_subida
 
