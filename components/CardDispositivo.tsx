@@ -21,13 +21,21 @@ export default function CardDispositivo({
         expandido ? "border-gray-400 sm:col-span-2" : "border-gray-200"
       }`}
     >
-      <div className="flex h-[270px] items-center justify-center bg-gray-100">
+      <div
+        className={`flex items-center justify-center ${
+          expandido ? "h-[380px] bg-white" : "h-[270px] bg-gray-100"
+        }`}
+      >
         {dispositivo.imagen_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={dispositivo.imagen_url}
             alt={dispositivo.nombre_dispositivo}
-            className="h-full w-full object-cover object-center"
+            className={`h-full w-full ${
+              expandido
+                ? "object-contain p-4"
+                : "object-cover object-center"
+            }`}
           />
         ) : (
           <div className="flex flex-col items-center gap-2 text-gray-400">
