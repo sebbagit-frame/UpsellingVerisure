@@ -32,7 +32,7 @@ Sitio web interno, informativo, para operadores de una empresa de alarmas (clien
 ```
 app/
 ├── layout.tsx              → layout base + Navbar (lee la cookie de sesión y le pasa el rol)
-├── page.tsx                → Inicio (matrículas, internos, sectores)
+├── page.tsx                → Inicio (logo, bienvenida, avisos, operadores, sectores, accesos rápidos)
 ├── login/page.tsx          → formulario de contraseña única
 ├── dispositivos/page.tsx   → catálogo de dispositivos
 ├── instructivos/page.tsx   → listado de PDFs
@@ -109,6 +109,10 @@ El proyecto exige estas variables (en Vercel o en `.env.local` local):
 
 **instructivos** — id, titulo, pdf_url, dispositivo_id (FK → dispositivos, opcional), fecha_subida
 
+**avisos** — id, titulo, mensaje. Se muestran como tarjetas destacadas al tope de Inicio; si la tabla está vacía (o no existe aún), la sección se oculta.
+
+**accesos_rapidos** — id, titulo, url. Barra inferior de botones en Inicio que abren la URL en pestaña nueva; misma lógica de ocultamiento que avisos.
+
 Imágenes y PDFs se guardan en Supabase Storage; las tablas solo referencian la URL pública.
 
 **Flujo de subida de imagen de dispositivos:** el formulario del panel admin envía el archivo a `POST /api/admin/dispositivos/imagen`, que lo sube al bucket público `dispositivos` con nombre único (`<timestamp>-<nombre-saneado>`) y devuelve la URL pública; esa URL viaja luego en el `imagen_url` del POST/PUT del dispositivo. Al eliminar un dispositivo (o reemplazar su imagen al editar) se borra también el archivo anterior del bucket.
@@ -167,7 +171,7 @@ Imágenes y PDFs se guardan en Supabase Storage; las tablas solo referencian la 
 | Panel admin — CRUD de Dispositivos (con subida de imagen a Storage) | ✅ Completo |
 | Panel admin — Recursos | ⏳ Pendiente |
 | Conexión a Supabase (`lib/supabase.ts`) | ✅ Completo |
-| Página Inicio (matrículas, internos, sectores) | ⏳ Pendiente |
+| Página Inicio (rediseño corporativo: logo, bienvenida roja/negra, avisos, operadores, sectores, accesos rápidos) | ✅ Completo (falta crear tablas `avisos` y `accesos_rapidos` en Supabase) |
 | Página Dispositivos (selector Verifast/Presense, buscador, tarjetas expandibles) | ✅ Completo |
 | Página Instructivos | ⏳ Pendiente |
 | Deploy a Vercel | ⏳ Pendiente |

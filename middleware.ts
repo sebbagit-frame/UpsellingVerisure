@@ -40,6 +40,7 @@ export async function middleware(solicitud: NextRequest) {
 }
 
 export const config = {
-  // Excluye archivos estáticos e internos de Next.js
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Excluye archivos estáticos e internos de Next.js y los assets públicos
+  // de /images (logos e ilustraciones, necesarios también en /login)
+  matcher: ["/((?!_next/static|_next/image|images/|favicon.ico).*)"],
 };

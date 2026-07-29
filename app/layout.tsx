@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
+import { Space_Grotesk } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { NOMBRE_COOKIE_SESION, verificarTokenSesion } from "@/lib/session";
+
+const fuenteTitulos = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  variable: "--fuente-titulos",
+});
 
 export const metadata: Metadata = {
   title: "Portal del Sector",
@@ -20,8 +27,8 @@ export default async function RootLayout({
     : null;
 
   return (
-    <html lang="es">
-      <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
+    <html lang="es" className={fuenteTitulos.variable}>
+      <body className="min-h-screen overflow-x-hidden bg-corporativo-fondo text-gray-900 antialiased">
         <Navbar rolSesion={rolSesion} />
         <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
       </body>

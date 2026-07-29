@@ -82,12 +82,16 @@ export default function CatalogoDispositivos() {
   }
 
   if (cargando) {
-    return <p className="text-gray-600">Cargando dispositivos...</p>;
+    return (
+      <p className="text-corporativo-textoSecundario">
+        Cargando dispositivos...
+      </p>
+    );
   }
 
   if (errorDeCarga) {
     return (
-      <p className="text-red-600">
+      <p className="text-corporativo-rojo">
         No se pudieron cargar los dispositivos. Intentá de nuevo más tarde.
       </p>
     );
@@ -97,29 +101,25 @@ export default function CatalogoDispositivos() {
   if (!sistemaSeleccionado) {
     return (
       <div>
-        <p className="mb-4 text-gray-600">Elegí el sistema de alarma:</p>
+        <p className="mb-4 text-corporativo-textoSecundario">
+          Elegí el sistema de alarma:
+        </p>
         <div className="grid gap-4 sm:grid-cols-2">
           {SISTEMAS.map((sistema) => (
             <button
               key={sistema.nombre}
               type="button"
               onClick={() => seleccionarSistema(sistema.nombre)}
-              className={`rounded-xl border-2 p-8 text-left shadow-sm transition hover:shadow-md ${
+              className={`group rounded-tarjeta border border-gray-200 border-l-4 bg-white p-8 text-left transition hover:shadow-tarjeta ${
                 sistema.nombre === "Verifast"
-                  ? "border-blue-200 bg-blue-50 hover:border-blue-400"
-                  : "border-emerald-200 bg-emerald-50 hover:border-emerald-400"
+                  ? "border-l-corporativo-rojo hover:border-corporativo-rojo"
+                  : "border-l-corporativo-negro hover:border-corporativo-negro"
               }`}
             >
-              <span
-                className={`block text-2xl font-bold ${
-                  sistema.nombre === "Verifast"
-                    ? "text-blue-900"
-                    : "text-emerald-900"
-                }`}
-              >
+              <span className="block font-titulos text-2xl font-bold tracking-tight text-corporativo-negro">
                 {sistema.nombre}
               </span>
-              <span className="mt-1 block text-sm text-gray-600">
+              <span className="mt-1 block text-sm text-corporativo-textoSecundario">
                 {sistema.descripcion}
               </span>
             </button>
@@ -136,15 +136,15 @@ export default function CatalogoDispositivos() {
         <button
           type="button"
           onClick={volverAlSelector}
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-corporativo-negro hover:text-corporativo-negro"
         >
           ← Cambiar de sistema
         </button>
         <span
-          className={`rounded-full px-3 py-1 text-sm font-semibold ${
+          className={`rounded-full px-3.5 py-1 font-titulos text-sm font-bold tracking-tight text-white ${
             sistemaSeleccionado === "Verifast"
-              ? "bg-blue-100 text-blue-900"
-              : "bg-emerald-100 text-emerald-900"
+              ? "bg-corporativo-rojo"
+              : "bg-corporativo-negro"
           }`}
         >
           {sistemaSeleccionado}
@@ -152,7 +152,7 @@ export default function CatalogoDispositivos() {
       </div>
 
       {dispositivosDelSistema.length === 0 ? (
-        <p className="rounded-lg border border-gray-200 bg-white p-6 text-gray-600">
+        <p className="rounded-tarjeta border border-gray-200 bg-white p-6 text-corporativo-textoSecundario">
           No hay dispositivos cargados todavía en este sistema.
         </p>
       ) : (
@@ -162,11 +162,11 @@ export default function CatalogoDispositivos() {
             value={terminoBusqueda}
             onChange={(evento) => setTerminoBusqueda(evento.target.value)}
             placeholder="Buscar por nombre de dispositivo..."
-            className="mb-6 w-full max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+            className="mb-6 w-full max-w-md rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
           />
 
           {dispositivosFiltrados.length === 0 ? (
-            <p className="rounded-lg border border-gray-200 bg-white p-6 text-gray-600">
+            <p className="rounded-tarjeta border border-gray-200 bg-white p-6 text-corporativo-textoSecundario">
               No se encontraron dispositivos con ese nombre.
             </p>
           ) : (

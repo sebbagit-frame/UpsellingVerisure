@@ -37,44 +37,62 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center">
-      <form
-        onSubmit={manejarEnvio}
-        className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
-      >
-        <h1 className="mb-1 text-xl font-bold">Acceso al sector</h1>
-        <p className="mb-4 text-sm text-gray-600">
-          Ingresá la contraseña compartida del sector.
-        </p>
-
-        <label
-          htmlFor="contrasena"
-          className="mb-1 block text-sm font-medium text-gray-700"
+    <div className="flex min-h-[70vh] items-center justify-center">
+      <div className="w-full max-w-sm">
+        <form
+          onSubmit={manejarEnvio}
+          className="overflow-hidden rounded-tarjeta border border-gray-200 bg-white shadow-tarjeta"
         >
-          Contraseña
-        </label>
-        <input
-          id="contrasena"
-          type="password"
-          value={contrasena}
-          onChange={(evento) => setContrasena(evento.target.value)}
-          required
-          autoFocus
-          className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
-        />
+          {/* Franja superior de marca con el logo */}
+          <div className="border-b-4 border-corporativo-rojo bg-corporativo-negro px-7 py-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/logo-icons/logo_Verisure.png"
+              alt="Verisure"
+              className="h-8 w-auto brightness-0 invert"
+            />
+          </div>
 
-        {mensajeError && (
-          <p className="mb-3 text-sm text-red-600">{mensajeError}</p>
-        )}
+          <div className="p-7">
+            <h1 className="font-titulos text-2xl font-bold tracking-tight">
+              Acceso al sector
+            </h1>
+            <p className="mb-6 mt-1 text-sm text-corporativo-textoSecundario">
+              Ingresá la contraseña compartida del sector.
+            </p>
 
-        <button
-          type="submit"
-          disabled={enviando}
-          className="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
-          {enviando ? "Verificando..." : "Ingresar"}
-        </button>
-      </form>
+            <label
+              htmlFor="contrasena"
+              className="mb-1.5 block text-sm font-medium text-gray-700"
+            >
+              Contraseña
+            </label>
+            <input
+              id="contrasena"
+              type="password"
+              value={contrasena}
+              onChange={(evento) => setContrasena(evento.target.value)}
+              required
+              autoFocus
+              className="mb-4 w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
+            />
+
+            {mensajeError && (
+              <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+                {mensajeError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={enviando}
+              className="w-full rounded-lg bg-corporativo-rojo px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            >
+              {enviando ? "Verificando..." : "Ingresar"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

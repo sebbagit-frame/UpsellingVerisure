@@ -1,3 +1,71 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Animación de entrada escalonada del hero de Inicio.
+   Cada elemento define su retraso con la variable --retraso-aparicion;
+   se ejecuta una sola vez al montar (animación CSS, sin re-disparo). */
+@keyframes aparicion-hero {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animar-aparicion {
+  opacity: 0;
+  animation: aparicion-hero 0.55s ease-out forwards;
+  animation-delay: var(--retraso-aparicion, 0ms);
+}
+
+/* Entrada de los bloques de fondo del hero: "arman el escenario"
+   deslizándose desde los costados antes de que aparezca el contenido */
+@keyframes deslizamiento-fondo-izquierda {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* La franja roja es diagonal (skew): el skew se repite en cada fotograma
+   para que la animación no pise la transformación de Tailwind */
+@keyframes deslizamiento-fondo-derecha {
+  from {
+    opacity: 0;
+    transform: translateX(100%) skewX(-12deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) skewX(-12deg);
+  }
+}
+
+.animar-fondo-izquierda {
+  opacity: 0;
+  animation: deslizamiento-fondo-izquierda 0.6s ease-out forwards;
+  animation-delay: var(--retraso-aparicion, 0ms);
+}
+
+.animar-fondo-derecha {
+  opacity: 0;
+  animation: deslizamiento-fondo-derecha 0.6s ease-out forwards;
+  animation-delay: var(--retraso-aparicion, 0ms);
+}
+
+/* Accesibilidad: sin animación si el usuario prefiere movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  .animar-aparicion,
+  .animar-fondo-izquierda,
+  .animar-fondo-derecha {
+    animation: none;
+    opacity: 1;
+  }
+}
