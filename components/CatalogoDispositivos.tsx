@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ShieldCheck, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Dispositivo, SistemaAlarma } from "@/lib/tipos";
 import CardDispositivo from "@/components/CardDispositivo";
@@ -97,33 +98,53 @@ export default function CatalogoDispositivos() {
     );
   }
 
-  // Vista inicial: selector de sistema
+  // Vista inicial: selector de sistema, centrado en la altura disponible
   if (!sistemaSeleccionado) {
     return (
-      <div>
-        <p className="mb-4 text-corporativo-textoSecundario">
+      <div className="flex min-h-[55vh] flex-col justify-center">
+        <p className="mb-10 max-w-3xl text-sm font-light leading-relaxed text-corporativo-textoSecundario sm:text-base">
+          A continuación vamos a realizar una breve descripción de nuestros
+          dispositivos con toda la información que debemos brindarle al cliente
+          y qué preguntas no hay que olvidar hacer para que la instalación sea
+          un éxito.
+        </p>
+        <p className="mb-5 font-titulos text-lg font-bold tracking-tight">
           Elegí el sistema de alarma:
         </p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {SISTEMAS.map((sistema) => (
-            <button
-              key={sistema.nombre}
-              type="button"
-              onClick={() => seleccionarSistema(sistema.nombre)}
-              className={`group rounded-tarjeta border border-gray-200 border-l-4 bg-white p-8 text-left transition hover:shadow-tarjeta ${
-                sistema.nombre === "Verifast"
-                  ? "border-l-corporativo-rojo hover:border-corporativo-rojo"
-                  : "border-l-corporativo-negro hover:border-corporativo-negro"
-              }`}
-            >
-              <span className="block font-titulos text-2xl font-bold tracking-tight text-corporativo-negro">
-                {sistema.nombre}
-              </span>
-              <span className="mt-1 block text-sm text-corporativo-textoSecundario">
-                {sistema.descripcion}
-              </span>
-            </button>
-          ))}
+        <div className="grid gap-5 sm:grid-cols-2">
+          {SISTEMAS.map((sistema) => {
+            const esVerifast = sistema.nombre === "Verifast";
+            return (
+              <button
+                key={sistema.nombre}
+                type="button"
+                onClick={() => seleccionarSistema(sistema.nombre)}
+                className={`group rounded-tarjeta border border-gray-200 border-l-4 p-10 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
+                  esVerifast
+                    ? "border-l-corporativo-rojo bg-red-50/60 hover:border-corporativo-rojo"
+                    : "border-l-corporativo-negro bg-neutral-100/80 hover:border-corporativo-negro"
+                }`}
+              >
+                <span
+                  className={`flex h-12 w-12 items-center justify-center rounded-lg text-white ${
+                    esVerifast ? "bg-corporativo-rojo" : "bg-corporativo-negro"
+                  }`}
+                >
+                  {esVerifast ? (
+                    <Zap className="h-6 w-6" strokeWidth={1.75} />
+                  ) : (
+                    <ShieldCheck className="h-6 w-6" strokeWidth={1.75} />
+                  )}
+                </span>
+                <span className="mt-5 block font-titulos text-3xl font-bold tracking-tight text-corporativo-negro">
+                  {sistema.nombre}
+                </span>
+                <span className="mt-1.5 block text-sm text-corporativo-textoSecundario">
+                  {sistema.descripcion}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     );
