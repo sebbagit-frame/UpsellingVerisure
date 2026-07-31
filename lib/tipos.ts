@@ -1,5 +1,17 @@
 export type SistemaAlarma = "Verifast" | "Presense";
 
+export interface Aviso {
+  id: number;
+  titulo: string;
+  mensaje: string;
+}
+
+export interface AccesoRapido {
+  id: number;
+  titulo: string;
+  url: string;
+}
+
 export interface Sector {
   id: number;
   sector: string;

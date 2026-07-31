@@ -2,16 +2,16 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Sector } from "@/lib/tipos";
+import { Aviso } from "@/lib/tipos";
 
-interface FormularioSector {
-  sector: string;
-  interno: string;
+interface FormularioAviso {
+  titulo: string;
+  mensaje: string;
 }
 
-const FORMULARIO_VACIO: FormularioSector = {
-  sector: "",
-  interno: "",
+const FORMULARIO_VACIO: FormularioAviso = {
+  titulo: "",
+  mensaje: "",
 };
 
 interface Mensaje {
@@ -19,31 +19,31 @@ interface Mensaje {
   texto: string;
 }
 
-export default function AdminSectoresPage() {
-  const [sectores, setSectores] = useState<Sector[]>([]);
+export default function AdminAvisosPage() {
+  const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [cargando, setCargando] = useState(true);
   const [formulario, setFormulario] =
-    useState<FormularioSector>(FORMULARIO_VACIO);
-  const [sectorEnEdicionId, setSectorEnEdicionId] = useState<number | null>(
+    useState<FormularioAviso>(FORMULARIO_VACIO);
+  const [avisoEnEdicionId, setAvisoEnEdicionId] = useState<number | null>(
     null
   );
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState<Mensaje | null>(null);
   const formularioRef = useRef<HTMLFormElement>(null);
 
-  const cargarSectores = useCallback(async () => {
+  const cargarAvisos = useCallback(async () => {
     setCargando(true);
     try {
-      const respuesta = await fetch("/api/admin/sectores");
+      const respuesta = await fetch("/api/admin/avisos");
       const datos = await respuesta.json();
       if (!respuesta.ok) {
         throw new Error(datos?.error);
       }
-      setSectores(datos.sectores);
+      setAvisos(datos.avisos);
     } catch {
       setMensaje({
         tipo: "error",
-        texto: "No se pudieron cargar los sectores",
+        texto: "No se pudieron cargar los avisos",
       });
     } finally {
       setCargando(false);
@@ -51,22 +51,22 @@ export default function AdminSectoresPage() {
   }, []);
 
   useEffect(() => {
-    cargarSectores();
-  }, [cargarSectores]);
+    cargarAvisos();
+  }, [cargarAvisos]);
 
-  function comenzarEdicion(sector: Sector) {
-    setSectorEnEdicionId(sector.id);
+  function comenzarEdicion(aviso: Aviso) {
+    setAvisoEnEdicionId(aviso.id);
     // Lleva la vista al formulario, que queda arriba de la tabla
     formularioRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     setFormulario({
-      sector: sector.sector,
-      interno: sector.interno ?? "",
+      titulo: aviso.titulo,
+      mensaje: aviso.mensaje,
     });
     setMensaje(null);
   }
 
   function cancelarEdicion() {
-    setSectorEnEdicionId(null);
+    setAvisoEnEdicionId(null);
     setFormulario(FORMULARIO_VACIO);
   }
 
@@ -74,21 +74,26 @@ export default function AdminSectoresPage() {
     evento.preventDefault();
     setMensaje(null);
 
-    if (!formulario.sector.trim()) {
+    if (!formulario.titulo.trim()) {
       setMensaje({
         tipo: "error",
-        texto: "El nombre del sector no puede estar vacío",
+        texto: "El título del aviso no puede estar vacío",
+      });
+      return;
+    }
+    if (!formulario.mensaje.trim()) {
+      setMensaje({
+        tipo: "error",
+        texto: "El mensaje del aviso no puede estar vacío",
       });
       return;
     }
 
     setGuardando(true);
     try {
-      const esEdicion = sectorEnEdicionId !== null;
+      const esEdicion = avisoEnEdicionId !== null;
       const respuesta = await fetch(
-        esEdicion
-          ? `/api/admin/sectores/${sectorEnEdicionId}`
-          : "/api/admin/sectores",
+        esEdicion ? `/api/admin/avisos/${avisoEnEdicionId}` : "/api/admin/avisos",
         {
           method: esEdicion ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -99,18 +104,18 @@ export default function AdminSectoresPage() {
       if (!respuesta.ok) {
         setMensaje({
           tipo: "error",
-          texto: datos?.error ?? "No se pudo guardar el sector",
+          texto: datos?.error ?? "No se pudo guardar el aviso",
         });
         return;
       }
       setMensaje({
         tipo: "exito",
         texto: esEdicion
-          ? "Sector actualizado correctamente"
-          : "Sector creado correctamente",
+          ? "Aviso actualizado correctamente"
+          : "Aviso creado correctamente",
       });
       cancelarEdicion();
-      await cargarSectores();
+      await cargarAvisos();
     } catch {
       setMensaje({ tipo: "error", texto: "Error de conexión al guardar" });
     } finally {
@@ -118,9 +123,9 @@ export default function AdminSectoresPage() {
     }
   }
 
-  async function eliminarSector(sector: Sector) {
+  async function eliminarAviso(aviso: Aviso) {
     const confirmado = window.confirm(
-      `¿Eliminar el sector "${sector.sector}"? Esta acción no se puede deshacer.`
+      `¿Eliminar el aviso "${aviso.titulo}"? Esta acción no se puede deshacer.`
     );
     if (!confirmado) {
       return;
@@ -128,22 +133,22 @@ export default function AdminSectoresPage() {
 
     setMensaje(null);
     try {
-      const respuesta = await fetch(`/api/admin/sectores/${sector.id}`, {
+      const respuesta = await fetch(`/api/admin/avisos/${aviso.id}`, {
         method: "DELETE",
       });
       const datos = await respuesta.json();
       if (!respuesta.ok) {
         setMensaje({
           tipo: "error",
-          texto: datos?.error ?? "No se pudo eliminar el sector",
+          texto: datos?.error ?? "No se pudo eliminar el aviso",
         });
         return;
       }
-      if (sectorEnEdicionId === sector.id) {
+      if (avisoEnEdicionId === aviso.id) {
         cancelarEdicion();
       }
-      setMensaje({ tipo: "exito", texto: "Sector eliminado correctamente" });
-      await cargarSectores();
+      setMensaje({ tipo: "exito", texto: "Aviso eliminado correctamente" });
+      await cargarAvisos();
     } catch {
       setMensaje({ tipo: "error", texto: "Error de conexión al eliminar" });
     }
@@ -158,7 +163,9 @@ export default function AdminSectoresPage() {
         >
           ← Volver al panel
         </Link>
-        <h1 className="font-titulos text-3xl font-bold tracking-tight">Sectores</h1>
+        <h1 className="font-titulos text-3xl font-bold tracking-tight">
+          Avisos
+        </h1>
       </div>
 
       {mensaje && (
@@ -179,43 +186,41 @@ export default function AdminSectoresPage() {
         className="mb-8 rounded-tarjeta border border-gray-200 bg-white p-6 shadow-tarjeta"
       >
         <h2 className="mb-4 font-titulos text-lg font-bold tracking-tight">
-          {sectorEnEdicionId !== null ? "Editar sector" : "Agregar sector"}
+          {avisoEnEdicionId !== null ? "Editar aviso" : "Agregar aviso"}
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="sector"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Nombre
-            </label>
-            <input
-              id="sector"
-              type="text"
-              value={formulario.sector}
-              onChange={(evento) =>
-                setFormulario({ ...formulario, sector: evento.target.value })
-              }
-              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="interno"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Interno
-            </label>
-            <input
-              id="interno"
-              type="text"
-              value={formulario.interno}
-              onChange={(evento) =>
-                setFormulario({ ...formulario, interno: evento.target.value })
-              }
-              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
-            />
-          </div>
+        <div className="mb-3">
+          <label
+            htmlFor="titulo"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
+            Título
+          </label>
+          <input
+            id="titulo"
+            type="text"
+            value={formulario.titulo}
+            onChange={(evento) =>
+              setFormulario({ ...formulario, titulo: evento.target.value })
+            }
+            className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="mensaje"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
+            Mensaje
+          </label>
+          <textarea
+            id="mensaje"
+            rows={4}
+            value={formulario.mensaje}
+            onChange={(evento) =>
+              setFormulario({ ...formulario, mensaje: evento.target.value })
+            }
+            className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
+          />
         </div>
         <div className="mt-4 flex gap-2">
           <button
@@ -225,11 +230,11 @@ export default function AdminSectoresPage() {
           >
             {guardando
               ? "Guardando..."
-              : sectorEnEdicionId !== null
+              : avisoEnEdicionId !== null
                 ? "Guardar cambios"
                 : "Agregar"}
           </button>
-          {sectorEnEdicionId !== null && (
+          {avisoEnEdicionId !== null && (
             <button
               type="button"
               onClick={cancelarEdicion}
@@ -242,41 +247,45 @@ export default function AdminSectoresPage() {
       </form>
 
       {cargando ? (
-        <p className="text-gray-600">Cargando sectores...</p>
-      ) : sectores.length === 0 ? (
+        <p className="text-gray-600">Cargando avisos...</p>
+      ) : avisos.length === 0 ? (
         <p className="rounded-tarjeta border border-gray-200 bg-white p-6 text-corporativo-textoSecundario">
-          No hay sectores cargados todavía.
+          No hay avisos cargados todavía.
         </p>
       ) : (
         <div className="overflow-x-auto rounded-tarjeta border border-gray-200 bg-white shadow-tarjeta">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-corporativo-textoSecundario">
               <tr>
-                <th className="px-4 py-3 font-semibold">Nombre</th>
-                <th className="px-4 py-3 font-semibold">Interno</th>
+                <th className="px-4 py-3 font-semibold">Título</th>
+                <th className="px-4 py-3 font-semibold">Mensaje</th>
                 <th className="px-4 py-3 font-semibold">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {sectores.map((sector) => (
+              {avisos.map((aviso) => (
                 <tr
-                  key={sector.id}
+                  key={aviso.id}
                   className="border-b border-gray-100 transition-colors last:border-b-0 hover:bg-gray-50"
                 >
-                  <td className="px-4 py-3">{sector.sector}</td>
-                  <td className="px-4 py-3">{sector.interno ?? "—"}</td>
+                  <td className="px-4 py-3 font-medium">{aviso.titulo}</td>
+                  <td className="max-w-md px-4 py-3">
+                    <p className="line-clamp-2 whitespace-pre-line text-corporativo-textoSecundario">
+                      {aviso.mensaje}
+                    </p>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() => comenzarEdicion(sector)}
+                        onClick={() => comenzarEdicion(aviso)}
                         className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-corporativo-negro hover:text-corporativo-negro"
                       >
                         Editar
                       </button>
                       <button
                         type="button"
-                        onClick={() => eliminarSector(sector)}
+                        onClick={() => eliminarAviso(aviso)}
                         className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:border-red-600 hover:bg-red-50"
                       >
                         Eliminar

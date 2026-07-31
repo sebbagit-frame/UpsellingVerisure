@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Operador } from "@/lib/tipos";
 
@@ -41,6 +41,7 @@ export default function AdminOperadoresPage() {
   );
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState<Mensaje | null>(null);
+  const formularioRef = useRef<HTMLFormElement>(null);
 
   const cargarOperadores = useCallback(async () => {
     setCargando(true);
@@ -67,6 +68,8 @@ export default function AdminOperadoresPage() {
 
   function comenzarEdicion(operador: Operador) {
     setOperadorEnEdicionId(operador.id);
+    // Lleva la vista al formulario, que queda arriba de la tabla
+    formularioRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     setFormulario({
       nombre_operador: operador.nombre_operador,
       matricula: operador.matricula,
@@ -190,6 +193,7 @@ export default function AdminOperadoresPage() {
       )}
 
       <form
+        ref={formularioRef}
         onSubmit={manejarEnvio}
         className="mb-8 rounded-tarjeta border border-gray-200 bg-white p-6 shadow-tarjeta"
       >

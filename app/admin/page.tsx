@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, Building2, Cpu, Users } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  Cpu,
+  Link2,
+  Megaphone,
+  Users,
+} from "lucide-react";
 
 const SECCIONES = [
   {
@@ -19,6 +26,18 @@ const SECCIONES = [
     titulo: "Dispositivos",
     descripcion: "Gestión del catálogo de dispositivos",
     Icono: Cpu,
+  },
+  {
+    href: "/admin/avisos",
+    titulo: "Avisos",
+    descripcion: "Comunicados destacados en la página de Inicio",
+    Icono: Megaphone,
+  },
+  {
+    href: "/admin/accesos-rapidos",
+    titulo: "Accesos rápidos",
+    descripcion: "Barra de enlaces útiles al pie de Inicio",
+    Icono: Link2,
   },
 ];
 

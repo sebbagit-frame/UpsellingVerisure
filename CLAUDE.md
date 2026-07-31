@@ -40,7 +40,9 @@ app/
 │   ├── page.tsx            → dashboard de administración (solo rol admin)
 │   ├── operadores/page.tsx → CRUD de operadores (tabla + formulario)
 │   ├── sectores/page.tsx   → CRUD de sectores (tabla + formulario)
-│   └── dispositivos/page.tsx → CRUD de dispositivos (con subida de imagen)
+│   ├── dispositivos/page.tsx → CRUD de dispositivos (con subida de imagen)
+│   ├── avisos/page.tsx     → CRUD de avisos de Inicio
+│   └── accesos-rapidos/page.tsx → CRUD de accesos rápidos de Inicio
 └── api/
     ├── login/route.ts      → valida contraseña, setea cookie de sesión
     ├── logout/route.ts     → borra la cookie
@@ -51,10 +53,16 @@ app/
         ├── sectores/
         │   ├── route.ts        → GET (listar) y POST (crear)
         │   └── [id]/route.ts   → PUT (editar) y DELETE (eliminar)
-        └── dispositivos/
+        ├── dispositivos/
+        │   ├── route.ts        → GET (listar) y POST (crear)
+        │   ├── [id]/route.ts   → PUT (editar) y DELETE (eliminar + borra la imagen del bucket)
+        │   └── imagen/route.ts → POST: sube la imagen al bucket y devuelve la URL pública
+        ├── avisos/
+        │   ├── route.ts        → GET (listar) y POST (crear)
+        │   └── [id]/route.ts   → PUT (editar) y DELETE (eliminar)
+        └── accesos-rapidos/
             ├── route.ts        → GET (listar) y POST (crear)
-            ├── [id]/route.ts   → PUT (editar) y DELETE (eliminar + borra la imagen del bucket)
-            └── imagen/route.ts → POST: sube la imagen al bucket y devuelve la URL pública
+            └── [id]/route.ts   → PUT (editar) y DELETE (eliminar)
 components/
 ├── Navbar.tsx               → consciente del rol: muestra el link "Administración" solo a sesiones admin
 ├── LogoutButton.tsx
@@ -67,7 +75,7 @@ lib/
 ├── supabase.ts             → cliente de Supabase con anon key (lectura)
 ├── supabaseAdmin.ts        → cliente con service role key (escritura, ignora RLS) — SOLO importar desde rutas API del servidor
 ├── storageDispositivos.ts  → helpers del bucket de imágenes (borrar por URL pública)
-├── tipos.ts                → tipos compartidos (Dispositivo, SistemaAlarma, Operador, Sector)
+├── tipos.ts                → tipos compartidos (Dispositivo, SistemaAlarma, Operador, Sector, Aviso, AccesoRapido)
 └── validaciones.ts         → validación de datos de entrada de las APIs
 middleware.ts                → protege todas las rutas salvo /login y /api/login
 ```
@@ -169,6 +177,7 @@ Imágenes y PDFs se guardan en Supabase Storage; las tablas solo referencian la 
 | Panel admin — dashboard y CRUD de Operadores | ✅ Completo |
 | Panel admin — CRUD de Sectores | ✅ Completo |
 | Panel admin — CRUD de Dispositivos (con subida de imagen a Storage) | ✅ Completo |
+| Panel admin — CRUD de Avisos y Accesos rápidos | ✅ Completo (falta crear las tablas en Supabase) |
 | Panel admin — Recursos | ⏳ Pendiente |
 | Conexión a Supabase (`lib/supabase.ts`) | ✅ Completo |
 | Página Inicio (rediseño corporativo: logo, bienvenida roja/negra, avisos, operadores, sectores, accesos rápidos) | ✅ Completo (falta crear tablas `avisos` y `accesos_rapidos` en Supabase) |

@@ -4,19 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ArrowRight, Megaphone } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { Operador, Sector } from "@/lib/tipos";
-
-interface Aviso {
-  id: number;
-  titulo: string;
-  mensaje: string;
-}
-
-interface AccesoRapido {
-  id: number;
-  titulo: string;
-  url: string;
-}
+import { AccesoRapido, Aviso, Operador, Sector } from "@/lib/tipos";
 
 /** Iniciales para el avatar: primera letra de las dos primeras palabras. */
 function obtenerIniciales(nombreCompleto: string): string {

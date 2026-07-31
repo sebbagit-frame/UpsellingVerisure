@@ -62,6 +62,85 @@ export function validarDatosDispositivo(
   };
 }
 
+export interface DatosAviso {
+  titulo: string;
+  mensaje: string;
+}
+
+/**
+ * Valida el cuerpo recibido para crear o editar un aviso.
+ * Devuelve los datos normalizados o un mensaje de error.
+ */
+export function validarDatosAviso(
+  cuerpo: unknown
+): { datos: DatosAviso } | { error: string } {
+  if (typeof cuerpo !== "object" || cuerpo === null) {
+    return { error: "Cuerpo de la solicitud inválido" };
+  }
+  const { titulo, mensaje } = cuerpo as Record<string, unknown>;
+
+  if (typeof titulo !== "string" || !titulo.trim()) {
+    return { error: "El título del aviso no puede estar vacío" };
+  }
+  if (typeof mensaje !== "string" || !mensaje.trim()) {
+    return { error: "El mensaje del aviso no puede estar vacío" };
+  }
+
+  return {
+    datos: {
+      titulo: titulo.trim(),
+      mensaje: mensaje.trim(),
+    },
+  };
+}
+
+export interface DatosAccesoRapido {
+  titulo: string;
+  url: string;
+}
+
+/**
+ * Valida el cuerpo recibido para crear o editar un acceso rápido.
+ * La URL debe ser un enlace http(s) válido.
+ */
+export function validarDatosAccesoRapido(
+  cuerpo: unknown
+): { datos: DatosAccesoRapido } | { error: string } {
+  if (typeof cuerpo !== "object" || cuerpo === null) {
+    return { error: "Cuerpo de la solicitud inválido" };
+  }
+  const { titulo, url } = cuerpo as Record<string, unknown>;
+
+  if (typeof titulo !== "string" || !titulo.trim()) {
+    return { error: "El título del acceso rápido no puede estar vacío" };
+  }
+  if (typeof url !== "string" || !url.trim()) {
+    return { error: "La URL del acceso rápido no puede estar vacía" };
+  }
+
+  const urlNormalizada = url.trim();
+  let urlValida = false;
+  try {
+    const urlParseada = new URL(urlNormalizada);
+    urlValida =
+      urlParseada.protocol === "http:" || urlParseada.protocol === "https:";
+  } catch {
+    urlValida = false;
+  }
+  if (!urlValida) {
+    return {
+      error: "La URL debe ser un enlace válido que empiece con http:// o https://",
+    };
+  }
+
+  return {
+    datos: {
+      titulo: titulo.trim(),
+      url: urlNormalizada,
+    },
+  };
+}
+
 export interface DatosSector {
   sector: string;
   interno: string | null;
