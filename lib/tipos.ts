@@ -1,5 +1,22 @@
 export type SistemaAlarma = "Verifast" | "Presense";
 
+export type TipoRecurso = "pdf" | "excel" | "word" | "enlace";
+
+export type CategoriaRecurso = "usos_basicos" | "upselling";
+
+export interface Recurso {
+  id: number;
+  titulo: string;
+  tipo: TipoRecurso;
+  categoria: CategoriaRecurso;
+  archivo_url: string | null;
+  enlace_externo: string | null;
+  dispositivo_id: number | null;
+  fecha_subida: string;
+  /** Nombre del dispositivo asociado (join con la tabla dispositivos) */
+  dispositivos: { nombre_dispositivo: string } | null;
+}
+
 export interface Aviso {
   id: number;
   titulo: string;

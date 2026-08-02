@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Building2,
   Cpu,
+  FolderOpen,
   Link2,
   Megaphone,
   Users,
@@ -26,6 +27,12 @@ const SECCIONES = [
     titulo: "Dispositivos",
     descripcion: "Gestión del catálogo de dispositivos",
     Icono: Cpu,
+  },
+  {
+    href: "/admin/recursos",
+    titulo: "Recursos",
+    descripcion: "Guías y enlaces de la página de Instructivos",
+    Icono: FolderOpen,
   },
   {
     href: "/admin/avisos",

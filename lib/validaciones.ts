@@ -62,6 +62,96 @@ export function validarDatosDispositivo(
   };
 }
 
+import { CategoriaRecurso, TipoRecurso } from "@/lib/tipos";
+
+const TIPOS_RECURSO_VALIDOS: TipoRecurso[] = ["pdf", "excel", "word", "enlace"];
+const CATEGORIAS_RECURSO_VALIDAS: CategoriaRecurso[] = [
+  "usos_basicos",
+  "upselling",
+];
+
+export interface DatosRecurso {
+  titulo: string;
+  tipo: TipoRecurso;
+  categoria: CategoriaRecurso;
+  archivo_url: string | null;
+  enlace_externo: string | null;
+  dispositivo_id: number | null;
+}
+
+/**
+ * Valida el cuerpo recibido para crear o editar un recurso.
+ * Debe tener exactamente una fuente: archivo_url O enlace_externo.
+ */
+export function validarDatosRecurso(
+  cuerpo: unknown
+): { datos: DatosRecurso } | { error: string } {
+  if (typeof cuerpo !== "object" || cuerpo === null) {
+    return { error: "Cuerpo de la solicitud inválido" };
+  }
+  const { titulo, tipo, categoria, archivo_url, enlace_externo, dispositivo_id } =
+    cuerpo as Record<string, unknown>;
+
+  if (typeof titulo !== "string" || !titulo.trim()) {
+    return { error: "El título del recurso no puede estar vacío" };
+  }
+  if (
+    typeof tipo !== "string" ||
+    !TIPOS_RECURSO_VALIDOS.includes(tipo as TipoRecurso)
+  ) {
+    return { error: "El tipo debe ser pdf, excel, word o enlace" };
+  }
+  if (
+    typeof categoria !== "string" ||
+    !CATEGORIAS_RECURSO_VALIDAS.includes(categoria as CategoriaRecurso)
+  ) {
+    return { error: "La categoría debe ser usos_basicos o upselling" };
+  }
+
+  const archivoNormalizado =
+    typeof archivo_url === "string" && archivo_url.trim()
+      ? archivo_url.trim()
+      : null;
+  const enlaceNormalizado =
+    typeof enlace_externo === "string" && enlace_externo.trim()
+      ? enlace_externo.trim()
+      : null;
+
+  if (!archivoNormalizado && !enlaceNormalizado) {
+    return { error: "El recurso debe tener un archivo o un enlace externo" };
+  }
+  if (archivoNormalizado && enlaceNormalizado) {
+    return {
+      error: "El recurso no puede tener archivo y enlace externo a la vez",
+    };
+  }
+  if (enlaceNormalizado && !/^https?:\/\/.+/.test(enlaceNormalizado)) {
+    return {
+      error: "El enlace externo debe empezar con http:// o https://",
+    };
+  }
+
+  let dispositivoIdNormalizado: number | null = null;
+  if (dispositivo_id !== null && dispositivo_id !== undefined && dispositivo_id !== "") {
+    const idNumerico = Number(dispositivo_id);
+    if (!Number.isInteger(idNumerico) || idNumerico <= 0) {
+      return { error: "El dispositivo asociado es inválido" };
+    }
+    dispositivoIdNormalizado = idNumerico;
+  }
+
+  return {
+    datos: {
+      titulo: titulo.trim(),
+      tipo: tipo as TipoRecurso,
+      categoria: categoria as CategoriaRecurso,
+      archivo_url: archivoNormalizado,
+      enlace_externo: enlaceNormalizado,
+      dispositivo_id: dispositivoIdNormalizado,
+    },
+  };
+}
+
 export interface DatosAviso {
   titulo: string;
   mensaje: string;

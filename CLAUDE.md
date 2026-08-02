@@ -35,14 +35,15 @@ app/
 ├── page.tsx                → Inicio (logo, bienvenida, avisos, operadores, sectores, accesos rápidos)
 ├── login/page.tsx          → formulario de contraseña única
 ├── dispositivos/page.tsx   → catálogo de dispositivos
-├── instructivos/page.tsx   → listado de PDFs
+├── instructivos/page.tsx   → selector de categoría + listado de recursos (buscador y filtro por tipo)
 ├── admin/
 │   ├── page.tsx            → dashboard de administración (solo rol admin)
 │   ├── operadores/page.tsx → CRUD de operadores (tabla + formulario)
 │   ├── sectores/page.tsx   → CRUD de sectores (tabla + formulario)
 │   ├── dispositivos/page.tsx → CRUD de dispositivos (con subida de imagen)
 │   ├── avisos/page.tsx     → CRUD de avisos de Inicio
-│   └── accesos-rapidos/page.tsx → CRUD de accesos rápidos de Inicio
+│   ├── accesos-rapidos/page.tsx → CRUD de accesos rápidos de Inicio
+│   └── recursos/page.tsx   → CRUD de recursos (con subida de archivos)
 └── api/
     ├── login/route.ts      → valida contraseña, setea cookie de sesión
     ├── logout/route.ts     → borra la cookie
@@ -60,6 +61,10 @@ app/
         ├── avisos/
         │   ├── route.ts        → GET (listar) y POST (crear)
         │   └── [id]/route.ts   → PUT (editar) y DELETE (eliminar)
+        ├── recursos/
+        │   ├── route.ts        → GET (listar) y POST (crear)
+        │   ├── [id]/route.ts   → PUT (editar) y DELETE (eliminar + borra el archivo del bucket)
+        │   └── archivo/route.ts → POST: sube el archivo al bucket y devuelve la URL pública
         └── accesos-rapidos/
             ├── route.ts        → GET (listar) y POST (crear)
             └── [id]/route.ts   → PUT (editar) y DELETE (eliminar)
@@ -115,7 +120,9 @@ El proyecto exige estas variables (en Vercel o en `.env.local` local):
 
 **dispositivos** — id, nombre_dispositivo, nomenclatura (código corto, ej. "YR", opcional), imagen_url (opcional), categoria, caracteristicas, descripcion, speech (guion para la conversación con el cliente, opcional), sistema (`'Verifast'` | `'Presense'`)
 
-**instructivos** — id, titulo, pdf_url, dispositivo_id (FK → dispositivos, opcional), fecha_subida
+**recursos** — id, titulo, tipo (`'pdf'` | `'excel'` | `'word'` | `'enlace'`, con check constraint en minúsculas), categoria (`'usos_basicos'` | `'upselling'`), archivo_url (opcional), enlace_externo (opcional), dispositivo_id (FK → dispositivos, opcional), fecha_subida. Cada recurso tiene **archivo_url o enlace_externo, nunca ambos**. Se muestran en la página Instructivos, que primero pide elegir categoría; los archivos van al bucket `recursos`.
+
+**Flujo de subida de archivos de recursos:** el formulario del panel admin envía el archivo y el tipo a `POST /api/admin/recursos/archivo`, que valida la extensión según el tipo (pdf → `.pdf`; excel → `.xls/.xlsx/.csv`; word → `.doc/.docx`), limita a 20 MB, lo sube al bucket público `recursos` con nombre único y devuelve la URL pública. Al eliminar un recurso (o reemplazar su archivo al editar) se borra el archivo anterior del bucket.
 
 **avisos** — id, titulo, mensaje. Se muestran como tarjetas destacadas al tope de Inicio; si la tabla está vacía (o no existe aún), la sección se oculta.
 
@@ -178,11 +185,11 @@ Imágenes y PDFs se guardan en Supabase Storage; las tablas solo referencian la 
 | Panel admin — CRUD de Sectores | ✅ Completo |
 | Panel admin — CRUD de Dispositivos (con subida de imagen a Storage) | ✅ Completo |
 | Panel admin — CRUD de Avisos y Accesos rápidos | ✅ Completo (falta crear las tablas en Supabase) |
-| Panel admin — Recursos | ⏳ Pendiente |
+| Panel admin — CRUD de Recursos (con subida de archivos a Storage) | ✅ Completo |
 | Conexión a Supabase (`lib/supabase.ts`) | ✅ Completo |
 | Página Inicio (rediseño corporativo: logo, bienvenida roja/negra, avisos, operadores, sectores, accesos rápidos) | ✅ Completo (falta crear tablas `avisos` y `accesos_rapidos` en Supabase) |
 | Página Dispositivos (selector Verifast/Presense, buscador, tarjetas expandibles) | ✅ Completo |
-| Página Instructivos | ⏳ Pendiente |
+| Página Instructivos (buscador, filtro por tipo, archivos y enlaces) | ✅ Completo |
 | Deploy a Vercel | ⏳ Pendiente |
 
 ---
