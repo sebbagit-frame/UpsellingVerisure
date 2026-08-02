@@ -29,7 +29,7 @@ export default async function RootLayout({
   return (
     <html lang="es" className={fuenteTitulos.variable}>
       <body className="min-h-screen overflow-x-hidden bg-corporativo-fondo text-gray-900 antialiased">
-        <Navbar rolSesion={rolSesion} />
+        {rolSesion && <Navbar rolSesion={rolSesion} />}
         <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
       </body>
     </html>

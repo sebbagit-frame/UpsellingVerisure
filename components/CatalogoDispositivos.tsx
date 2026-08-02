@@ -5,6 +5,10 @@ import { ShieldCheck, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Dispositivo, SistemaAlarma } from "@/lib/tipos";
 import CardDispositivo from "@/components/CardDispositivo";
+import {
+  estiloRetrasoEscalonado,
+  useRevelarAlEntrar,
+} from "@/lib/hooks/useRevelarAlEntrar";
 
 const SISTEMAS: { nombre: SistemaAlarma; descripcion: string }[] = [
   { nombre: "Verifast", descripcion: "Sistema de alarma Verifast" },
@@ -21,6 +25,9 @@ export default function CatalogoDispositivos() {
   const [dispositivoExpandidoId, setDispositivoExpandidoId] = useState<
     number | null
   >(null);
+
+  const { referencia: referenciaGrilla, visible: grillaVisible } =
+    useRevelarAlEntrar<HTMLDivElement>();
 
   // Los datos se consultan al montar el componente: cada vez que se entra
   // a la pantalla se trae el catálogo fresco, sin cachés intermedios
@@ -112,18 +119,19 @@ export default function CatalogoDispositivos() {
           Elegí el sistema de alarma:
         </p>
         <div className="grid gap-5 sm:grid-cols-2">
-          {SISTEMAS.map((sistema) => {
+          {SISTEMAS.map((sistema, indice) => {
             const esVerifast = sistema.nombre === "Verifast";
             return (
               <button
                 key={sistema.nombre}
                 type="button"
                 onClick={() => seleccionarSistema(sistema.nombre)}
-                className={`group rounded-tarjeta border border-gray-200 border-l-4 p-10 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
+                className={`group animar-aparicion rounded-tarjeta border border-gray-200 border-l-4 p-10 text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
                   esVerifast
                     ? "border-l-corporativo-rojo bg-red-50/60 hover:border-corporativo-rojo"
                     : "border-l-corporativo-negro bg-neutral-100/80 hover:border-corporativo-negro"
                 }`}
+                style={estiloRetrasoEscalonado(indice, 140)}
               >
                 <span
                   className={`flex h-12 w-12 items-center justify-center rounded-lg text-white ${
@@ -191,20 +199,29 @@ export default function CatalogoDispositivos() {
               No se encontraron dispositivos con ese nombre.
             </p>
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2">
-              {dispositivosFiltrados.map((dispositivo) => (
-                <CardDispositivo
+            <div ref={referenciaGrilla} className="grid gap-5 sm:grid-cols-2">
+              {dispositivosFiltrados.map((dispositivo, indice) => (
+                <div
                   key={dispositivo.id}
-                  dispositivo={dispositivo}
-                  expandido={dispositivoExpandidoId === dispositivo.id}
-                  alAlternar={() =>
-                    setDispositivoExpandidoId(
-                      dispositivoExpandidoId === dispositivo.id
-                        ? null
-                        : dispositivo.id
-                    )
-                  }
-                />
+                  className={`${
+                    dispositivoExpandidoId === dispositivo.id
+                      ? "sm:col-span-2"
+                      : ""
+                  } ${grillaVisible ? "animar-aparicion" : "opacity-0"}`}
+                  style={estiloRetrasoEscalonado(indice)}
+                >
+                  <CardDispositivo
+                    dispositivo={dispositivo}
+                    expandido={dispositivoExpandidoId === dispositivo.id}
+                    alAlternar={() =>
+                      setDispositivoExpandidoId(
+                        dispositivoExpandidoId === dispositivo.id
+                          ? null
+                          : dispositivo.id
+                      )
+                    }
+                  />
+                </div>
               ))}
             </div>
           )}

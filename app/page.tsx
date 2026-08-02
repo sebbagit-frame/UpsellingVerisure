@@ -5,6 +5,10 @@ import Image from "next/image";
 import { ArrowRight, Megaphone } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { AccesoRapido, Aviso, Operador, Sector } from "@/lib/tipos";
+import {
+  estiloRetrasoEscalonado,
+  useRevelarAlEntrar,
+} from "@/lib/hooks/useRevelarAlEntrar";
 
 /** Iniciales para el avatar: primera letra de las dos primeras palabras. */
 function obtenerIniciales(nombreCompleto: string): string {
@@ -23,6 +27,15 @@ export default function InicioPage() {
   const [accesosRapidos, setAccesosRapidos] = useState<AccesoRapido[]>([]);
   const [cargando, setCargando] = useState(true);
   const [errorDeCarga, setErrorDeCarga] = useState(false);
+
+  const { referencia: referenciaAvisos, visible: avisosVisibles } =
+    useRevelarAlEntrar<HTMLDivElement>();
+  const { referencia: referenciaOperadores, visible: operadoresVisibles } =
+    useRevelarAlEntrar<HTMLDivElement>();
+  const { referencia: referenciaSectores, visible: sectoresVisibles } =
+    useRevelarAlEntrar<HTMLDivElement>();
+  const { referencia: referenciaAccesos, visible: accesosVisibles } =
+    useRevelarAlEntrar<HTMLElement>();
 
   useEffect(() => {
     let componenteActivo = true;
@@ -161,11 +174,14 @@ export default function InicioPage() {
               <h2 className="mb-4 font-titulos text-xl font-bold tracking-tight">
                 Avisos
               </h2>
-              <div className="space-y-3">
-                {avisos.map((aviso) => (
+              <div ref={referenciaAvisos} className="space-y-3">
+                {avisos.map((aviso, indice) => (
                   <article
                     key={aviso.id}
-                    className="rounded-tarjeta border-l-4 border-corporativo-rojo bg-red-50 p-4"
+                    className={`rounded-tarjeta border-l-4 border-corporativo-rojo bg-red-50 p-4 ${
+                      avisosVisibles ? "animar-aparicion" : "opacity-0"
+                    }`}
+                    style={estiloRetrasoEscalonado(indice)}
                   >
                     <div className="flex items-start gap-3">
                       <Megaphone className="mt-0.5 h-5 w-5 shrink-0 text-corporativo-rojo" />
@@ -194,7 +210,10 @@ export default function InicioPage() {
                 No hay operadores cargados todavía.
               </p>
             ) : (
-              <div className="overflow-x-auto rounded-tarjeta border border-gray-200 bg-white shadow-tarjeta">
+              <div
+                ref={referenciaOperadores}
+                className="overflow-x-auto rounded-tarjeta border border-gray-200 bg-white shadow-tarjeta"
+              >
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-corporativo-textoSecundario">
@@ -204,10 +223,13 @@ export default function InicioPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {operadores.map((operador) => (
+                    {operadores.map((operador, indice) => (
                       <tr
                         key={operador.id}
-                        className="border-b border-gray-100 transition-colors last:border-b-0 hover:bg-gray-50"
+                        className={`border-b border-gray-100 transition-colors last:border-b-0 hover:bg-gray-50 ${
+                          operadoresVisibles ? "animar-aparicion" : "opacity-0"
+                        }`}
+                        style={estiloRetrasoEscalonado(indice, 50)}
                       >
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-3">
@@ -243,11 +265,17 @@ export default function InicioPage() {
                 No hay sectores cargados todavía.
               </p>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {sectores.map((sector) => (
+              <div
+                ref={referenciaSectores}
+                className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              >
+                {sectores.map((sector, indice) => (
                   <article
                     key={sector.id}
-                    className="rounded-tarjeta border border-gray-200 border-l-4 border-l-corporativo-rojo bg-white p-5"
+                    className={`rounded-tarjeta border border-gray-200 border-l-4 border-l-corporativo-rojo bg-white p-5 ${
+                      sectoresVisibles ? "animar-aparicion" : "opacity-0"
+                    }`}
+                    style={estiloRetrasoEscalonado(indice)}
                   >
                     <h3 className="font-titulos font-bold tracking-tight">
                       {sector.sector}
@@ -264,16 +292,20 @@ export default function InicioPage() {
           {/* Accesos rápidos: solo si hay cargados */}
           {accesosRapidos.length > 0 && (
             <nav
+              ref={referenciaAccesos}
               aria-label="Accesos rápidos"
               className="flex flex-wrap items-center gap-2 rounded-xl bg-corporativo-negro p-3"
             >
-              {accesosRapidos.map((acceso) => (
+              {accesosRapidos.map((acceso, indice) => (
                 <a
                   key={acceso.id}
                   href={acceso.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-lg bg-neutral-800 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-corporativo-rojo"
+                  className={`flex items-center gap-1.5 rounded-lg bg-neutral-800 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-corporativo-rojo ${
+                    accesosVisibles ? "animar-aparicion" : "opacity-0"
+                  }`}
+                  style={estiloRetrasoEscalonado(indice, 60)}
                 >
                   {acceso.titulo}
                   <ArrowRight className="h-4 w-4" />

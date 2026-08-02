@@ -37,7 +37,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-[70vh] items-center justify-center">
+    <div className="relative flex min-h-[70vh] items-center justify-center">
+      <div className="fixed inset-0 -z-10">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/general/casa-protegida-verisure.webp"
+          alt=""
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/55" />
+      </div>
+
       <div className="w-full max-w-sm">
         <form
           onSubmit={manejarEnvio}
