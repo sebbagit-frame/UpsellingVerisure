@@ -35,12 +35,15 @@ export interface Sector {
   interno: string | null;
 }
 
+export type RolOperador = "Supervisor" | "Coordinador" | "Mentor" | "Operador";
+
 export interface Operador {
   id: number;
   nombre_operador: string;
   matricula: string;
   interno: string | null;
   foto_url: string | null;
+  rol: RolOperador | null;
 }
 
 export interface Dispositivo {

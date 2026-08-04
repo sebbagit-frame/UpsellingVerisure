@@ -2,7 +2,14 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Operador } from "@/lib/tipos";
+import { Operador, RolOperador } from "@/lib/tipos";
+
+const ROLES_OPERADOR: RolOperador[] = [
+  "Supervisor",
+  "Coordinador",
+  "Mentor",
+  "Operador",
+];
 
 /** Iniciales para el avatar: primera letra de las dos primeras palabras. */
 function obtenerIniciales(nombreCompleto: string): string {
@@ -18,12 +25,14 @@ interface FormularioOperador {
   nombre_operador: string;
   matricula: string;
   interno: string;
+  rol: RolOperador;
 }
 
 const FORMULARIO_VACIO: FormularioOperador = {
   nombre_operador: "",
   matricula: "",
   interno: "",
+  rol: "Operador",
 };
 
 interface Mensaje {
@@ -82,6 +91,7 @@ export default function AdminOperadoresPage() {
       nombre_operador: operador.nombre_operador,
       matricula: operador.matricula,
       interno: operador.interno ?? "",
+      rol: operador.rol ?? "Operador",
     });
     setFotoActualUrl(operador.foto_url);
     limpiarInputArchivo();
@@ -249,7 +259,7 @@ export default function AdminOperadoresPage() {
             ? "Editar operador"
             : "Agregar operador"}
         </h2>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-4">
           <div>
             <label
               htmlFor="nombre_operador"
@@ -303,6 +313,31 @@ export default function AdminOperadoresPage() {
               }
               className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
             />
+          </div>
+          <div>
+            <label
+              htmlFor="rol"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              Rol
+            </label>
+            <select
+              id="rol"
+              value={formulario.rol}
+              onChange={(evento) =>
+                setFormulario({
+                  ...formulario,
+                  rol: evento.target.value as RolOperador,
+                })
+              }
+              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
+            >
+              {ROLES_OPERADOR.map((rol) => (
+                <option key={rol} value={rol}>
+                  {rol}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -373,6 +408,7 @@ export default function AdminOperadoresPage() {
                 <th className="px-4 py-3 font-semibold">Nombre</th>
                 <th className="px-4 py-3 font-semibold">Matrícula</th>
                 <th className="px-4 py-3 font-semibold">Interno</th>
+                <th className="px-4 py-3 font-semibold">Rol</th>
                 <th className="px-4 py-3 font-semibold">Acciones</th>
               </tr>
             </thead>
@@ -403,6 +439,7 @@ export default function AdminOperadoresPage() {
                   </td>
                   <td className="px-4 py-3 font-mono">{operador.matricula}</td>
                   <td className="px-4 py-3">{operador.interno ?? "—"}</td>
+                  <td className="px-4 py-3">{operador.rol ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <button

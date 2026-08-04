@@ -1,4 +1,4 @@
-import { SistemaAlarma } from "@/lib/tipos";
+import { RolOperador, SistemaAlarma } from "@/lib/tipos";
 
 const SISTEMAS_VALIDOS: SistemaAlarma[] = ["Verifast", "Presense"];
 
@@ -261,11 +261,19 @@ export function validarDatosSector(
   };
 }
 
+const ROLES_OPERADOR_VALIDOS: RolOperador[] = [
+  "Supervisor",
+  "Coordinador",
+  "Mentor",
+  "Operador",
+];
+
 export interface DatosOperador {
   nombre_operador: string;
   matricula: string;
   interno: string | null;
   foto_url: string | null;
+  rol: RolOperador;
 }
 
 /**
@@ -278,16 +286,22 @@ export function validarDatosOperador(
   if (typeof cuerpo !== "object" || cuerpo === null) {
     return { error: "Cuerpo de la solicitud inválido" };
   }
-  const { nombre_operador, matricula, interno, foto_url } = cuerpo as Record<
-    string,
-    unknown
-  >;
+  const { nombre_operador, matricula, interno, foto_url, rol } =
+    cuerpo as Record<string, unknown>;
 
   if (typeof nombre_operador !== "string" || !nombre_operador.trim()) {
     return { error: "El nombre del operador no puede estar vacío" };
   }
   if (typeof matricula !== "string" || !matricula.trim()) {
     return { error: "La matrícula no puede estar vacía" };
+  }
+  if (
+    typeof rol !== "string" ||
+    !ROLES_OPERADOR_VALIDOS.includes(rol as RolOperador)
+  ) {
+    return {
+      error: "El rol debe ser Supervisor, Coordinador, Mentor u Operador",
+    };
   }
 
   return {
@@ -300,6 +314,7 @@ export function validarDatosOperador(
         typeof foto_url === "string" && foto_url.trim()
           ? foto_url.trim()
           : null,
+      rol: rol as RolOperador,
     },
   };
 }

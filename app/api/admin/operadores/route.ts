@@ -5,7 +5,7 @@ import { validarDatosOperador } from "@/lib/validaciones";
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("operadores")
-    .select("id, nombre_operador, matricula, interno, foto_url")
+    .select("id, nombre_operador, matricula, interno, foto_url, rol")
     .order("nombre_operador");
 
   if (error) {

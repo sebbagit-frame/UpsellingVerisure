@@ -120,7 +120,7 @@ El proyecto exige estas variables (en Vercel o en `.env.local` local):
 
 **sectores** — id, sector (nombre del sector), interno (opcional)
 
-**operadores** — id, nombre_operador, matricula, interno (opcional), foto_url (opcional). Se muestran en la página pública Nosotros como grilla de tarjetas (foto o placeholder con ícono de persona, nombre, matrícula, interno); ya no aparecen en Inicio.
+**operadores** — id, nombre_operador, matricula, interno (opcional), foto_url (opcional), rol (`'Supervisor'` | `'Coordinador'` | `'Mentor'` | `'Operador'`). Se muestran en la página pública Nosotros agrupados por rol, en secciones apiladas en ese orden fijo (Supervisor → Coordinador → Mentores/as → Operadores); cada sección es una grilla de tarjetas (foto o placeholder con ícono de persona, nombre, matrícula, interno) y se oculta por completo si no tiene ningún integrante. Ya no aparecen en Inicio.
 
 **Flujo de subida de foto de operadores:** el formulario del panel admin envía el archivo a `POST /api/admin/operadores/foto`, que primero se asegura de que exista el bucket público `operadores` (lo crea si falta, a diferencia de `dispositivos` y `recursos` que se crean a mano desde el dashboard), lo sube con nombre único (`<timestamp>-<nombre-saneado>`) y devuelve la URL pública; esa URL viaja luego en el `foto_url` del POST/PUT del operador. Al eliminar un operador (o reemplazar su foto al editar) se borra también la foto anterior del bucket.
 
