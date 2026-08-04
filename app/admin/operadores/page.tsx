@@ -39,9 +39,11 @@ export default function AdminOperadoresPage() {
   const [operadorEnEdicionId, setOperadorEnEdicionId] = useState<number | null>(
     null
   );
+  const [fotoActualUrl, setFotoActualUrl] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState<Mensaje | null>(null);
   const formularioRef = useRef<HTMLFormElement>(null);
+  const inputArchivoRef = useRef<HTMLInputElement>(null);
 
   const cargarOperadores = useCallback(async () => {
     setCargando(true);
@@ -66,6 +68,12 @@ export default function AdminOperadoresPage() {
     cargarOperadores();
   }, [cargarOperadores]);
 
+  function limpiarInputArchivo() {
+    if (inputArchivoRef.current) {
+      inputArchivoRef.current.value = "";
+    }
+  }
+
   function comenzarEdicion(operador: Operador) {
     setOperadorEnEdicionId(operador.id);
     // Lleva la vista al formulario, que queda arriba de la tabla
@@ -75,12 +83,42 @@ export default function AdminOperadoresPage() {
       matricula: operador.matricula,
       interno: operador.interno ?? "",
     });
+    setFotoActualUrl(operador.foto_url);
+    limpiarInputArchivo();
     setMensaje(null);
   }
 
   function cancelarEdicion() {
     setOperadorEnEdicionId(null);
     setFormulario(FORMULARIO_VACIO);
+    setFotoActualUrl(null);
+    limpiarInputArchivo();
+  }
+
+  /** Sube la foto seleccionada (si hay) y devuelve su URL pública. */
+  async function subirFotoSiCorresponde(): Promise<
+    { url: string | null } | { error: string }
+  > {
+    const archivo = inputArchivoRef.current?.files?.[0];
+    if (!archivo) {
+      return { url: fotoActualUrl };
+    }
+
+    const formularioArchivo = new FormData();
+    formularioArchivo.append("archivo", archivo);
+    try {
+      const respuesta = await fetch("/api/admin/operadores/foto", {
+        method: "POST",
+        body: formularioArchivo,
+      });
+      const datos = await respuesta.json();
+      if (!respuesta.ok) {
+        return { error: datos?.error ?? "No se pudo subir la foto" };
+      }
+      return { url: datos.url };
+    } catch {
+      return { error: "Error de conexión al subir la foto" };
+    }
   }
 
   async function manejarEnvio(evento: FormEvent<HTMLFormElement>) {
@@ -101,6 +139,12 @@ export default function AdminOperadoresPage() {
 
     setGuardando(true);
     try {
+      const resultadoFoto = await subirFotoSiCorresponde();
+      if ("error" in resultadoFoto) {
+        setMensaje({ tipo: "error", texto: resultadoFoto.error });
+        return;
+      }
+
       const esEdicion = operadorEnEdicionId !== null;
       const respuesta = await fetch(
         esEdicion
@@ -109,7 +153,10 @@ export default function AdminOperadoresPage() {
         {
           method: esEdicion ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formulario),
+          body: JSON.stringify({
+            ...formulario,
+            foto_url: resultadoFoto.url,
+          }),
         }
       );
       const datos = await respuesta.json();
@@ -258,6 +305,36 @@ export default function AdminOperadoresPage() {
             />
           </div>
         </div>
+
+        <div className="mt-3">
+          <label
+            htmlFor="foto"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
+            Foto
+          </label>
+          {fotoActualUrl && (
+            <div className="mb-2 flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={fotoActualUrl}
+                alt="Foto actual del operador"
+                className="h-16 w-16 rounded-full border border-gray-200 object-cover"
+              />
+              <span className="text-sm text-gray-600">
+                Foto actual — seleccioná un archivo para reemplazarla
+              </span>
+            </div>
+          )}
+          <input
+            id="foto"
+            ref={inputArchivoRef}
+            type="file"
+            accept="image/*"
+            className="block text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-corporativo-negro file:px-3.5 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-neutral-700"
+          />
+        </div>
+
         <div className="mt-4 flex gap-2">
           <button
             type="submit"
@@ -307,9 +384,18 @@ export default function AdminOperadoresPage() {
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-corporativo-negro text-xs font-semibold text-white">
-                        {obtenerIniciales(operador.nombre_operador)}
-                      </span>
+                      {operador.foto_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={operador.foto_url}
+                          alt={operador.nombre_operador}
+                          className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-corporativo-negro text-xs font-semibold text-white">
+                          {obtenerIniciales(operador.nombre_operador)}
+                        </span>
+                      )}
                       <span className="font-medium">
                         {operador.nombre_operador}
                       </span>

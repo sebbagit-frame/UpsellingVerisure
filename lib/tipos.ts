@@ -40,6 +40,7 @@ export interface Operador {
   nombre_operador: string;
   matricula: string;
   interno: string | null;
+  foto_url: string | null;
 }
 
 export interface Dispositivo {

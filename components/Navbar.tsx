@@ -7,6 +7,7 @@ import { RolSesion } from "@/lib/session";
 
 const links = [
   { href: "/", label: "Inicio" },
+  { href: "/nosotros", label: "Nosotros" },
   { href: "/dispositivos", label: "Dispositivos" },
   { href: "/instructivos", label: "Instructivos" },
 ];

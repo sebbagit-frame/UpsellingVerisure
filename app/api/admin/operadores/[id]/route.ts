@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { validarDatosOperador } from "@/lib/validaciones";
+import { eliminarFotoDeStorage } from "@/lib/storageOperadores";
 
 function obtenerIdValido(id: string): number | null {
   const idNumerico = Number(id);
@@ -31,6 +32,13 @@ export async function PUT(
     return NextResponse.json({ error: resultado.error }, { status: 400 });
   }
 
+  // Estado previo para limpiar la foto anterior si fue reemplazada
+  const { data: operadorPrevio } = await supabaseAdmin
+    .from("operadores")
+    .select("foto_url")
+    .eq("id", idOperador)
+    .maybeSingle();
+
   const { data, error } = await supabaseAdmin
     .from("operadores")
     .update(resultado.datos)
@@ -50,6 +58,14 @@ export async function PUT(
       { status: 404 }
     );
   }
+
+  if (
+    operadorPrevio?.foto_url &&
+    operadorPrevio.foto_url !== resultado.datos.foto_url
+  ) {
+    await eliminarFotoDeStorage(operadorPrevio.foto_url);
+  }
+
   return NextResponse.json({ operador: data });
 }
 
@@ -84,5 +100,10 @@ export async function DELETE(
       { status: 404 }
     );
   }
+
+  if (data.foto_url) {
+    await eliminarFotoDeStorage(data.foto_url);
+  }
+
   return NextResponse.json({ ok: true });
 }

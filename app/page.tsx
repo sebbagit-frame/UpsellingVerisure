@@ -4,24 +4,13 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ArrowRight, Megaphone } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { AccesoRapido, Aviso, Operador, Sector } from "@/lib/tipos";
+import { AccesoRapido, Aviso, Sector } from "@/lib/tipos";
 import {
   estiloRetrasoEscalonado,
   useRevelarAlEntrar,
 } from "@/lib/hooks/useRevelarAlEntrar";
 
-/** Iniciales para el avatar: primera letra de las dos primeras palabras. */
-function obtenerIniciales(nombreCompleto: string): string {
-  return nombreCompleto
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((palabra) => palabra[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
 export default function InicioPage() {
-  const [operadores, setOperadores] = useState<Operador[]>([]);
   const [sectores, setSectores] = useState<Sector[]>([]);
   const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [accesosRapidos, setAccesosRapidos] = useState<AccesoRapido[]>([]);
@@ -29,8 +18,6 @@ export default function InicioPage() {
   const [errorDeCarga, setErrorDeCarga] = useState(false);
 
   const { referencia: referenciaAvisos, visible: avisosVisibles } =
-    useRevelarAlEntrar<HTMLDivElement>();
-  const { referencia: referenciaOperadores, visible: operadoresVisibles } =
     useRevelarAlEntrar<HTMLDivElement>();
   const { referencia: referenciaSectores, visible: sectoresVisibles } =
     useRevelarAlEntrar<HTMLDivElement>();
@@ -41,31 +28,28 @@ export default function InicioPage() {
     let componenteActivo = true;
 
     async function cargarDatos() {
-      const [
-        respuestaOperadores,
-        respuestaSectores,
-        respuestaAvisos,
-        respuestaAccesos,
-      ] = await Promise.all([
-        supabase
-          .from("operadores")
-          .select("id, nombre_operador, matricula, interno")
-          .order("nombre_operador"),
-        supabase.from("sectores").select("id, sector, interno").order("sector"),
-        // Avisos y accesos rápidos son opcionales: si la tabla no existe
-        // o está vacía, la sección simplemente no se muestra
-        supabase.from("avisos").select("id, titulo, mensaje").order("id"),
-        supabase.from("accesos_rapidos").select("id, titulo, url").order("id"),
-      ]);
+      const [respuestaSectores, respuestaAvisos, respuestaAccesos] =
+        await Promise.all([
+          supabase
+            .from("sectores")
+            .select("id, sector, interno")
+            .order("sector"),
+          // Avisos y accesos rápidos son opcionales: si la tabla no existe
+          // o está vacía, la sección simplemente no se muestra
+          supabase.from("avisos").select("id, titulo, mensaje").order("id"),
+          supabase
+            .from("accesos_rapidos")
+            .select("id, titulo, url")
+            .order("id"),
+        ]);
 
       if (!componenteActivo) {
         return;
       }
 
-      if (respuestaOperadores.error || respuestaSectores.error) {
+      if (respuestaSectores.error) {
         setErrorDeCarga(true);
       } else {
-        setOperadores((respuestaOperadores.data ?? []) as Operador[]);
         setSectores((respuestaSectores.data ?? []) as Sector[]);
       }
       setAvisos(respuestaAvisos.error ? [] : (respuestaAvisos.data as Aviso[]));
@@ -199,61 +183,6 @@ export default function InicioPage() {
               </div>
             </section>
           )}
-
-          {/* Operadores */}
-          <section className="mb-10">
-            <h2 className="mb-4 font-titulos text-xl font-bold tracking-tight">
-              Operadores
-            </h2>
-            {operadores.length === 0 ? (
-              <p className="rounded-tarjeta border border-gray-200 bg-white p-6 text-corporativo-textoSecundario">
-                No hay operadores cargados todavía.
-              </p>
-            ) : (
-              <div
-                ref={referenciaOperadores}
-                className="overflow-x-auto rounded-tarjeta border border-gray-200 bg-white shadow-tarjeta"
-              >
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-corporativo-textoSecundario">
-                      <th className="px-5 py-3 font-semibold">Operador</th>
-                      <th className="px-5 py-3 font-semibold">Matrícula</th>
-                      <th className="px-5 py-3 font-semibold">Interno</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {operadores.map((operador, indice) => (
-                      <tr
-                        key={operador.id}
-                        className={`border-b border-gray-100 transition-colors last:border-b-0 hover:bg-gray-50 ${
-                          operadoresVisibles ? "animar-aparicion" : "opacity-0"
-                        }`}
-                        style={estiloRetrasoEscalonado(indice, 50)}
-                      >
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-3">
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-corporativo-negro text-xs font-semibold text-white">
-                              {obtenerIniciales(operador.nombre_operador)}
-                            </span>
-                            <span className="font-medium">
-                              {operador.nombre_operador}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 font-mono">
-                          {operador.matricula}
-                        </td>
-                        <td className="px-5 py-3">
-                          {operador.interno ?? "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
 
           {/* Sectores */}
           <section className="mb-10">

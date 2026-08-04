@@ -31,14 +31,15 @@ Sitio web interno, informativo, para operadores de una empresa de alarmas (clien
 
 ```
 app/
-├── layout.tsx              → layout base + Navbar (lee la cookie de sesión y le pasa el rol)
-├── page.tsx                → Inicio (logo, bienvenida, avisos, operadores, sectores, accesos rápidos)
-├── login/page.tsx          → formulario de contraseña única
+├── layout.tsx              → layout base + Navbar (lee la cookie de sesión y le pasa el rol; el Navbar solo se renderiza si hay sesión activa)
+├── page.tsx                → Inicio (logo, bienvenida, avisos, sectores, accesos rápidos)
+├── login/page.tsx          → formulario de contraseña única, con fondo a pantalla completa
+├── nosotros/page.tsx       → grilla de tarjetas del equipo de operadores (foto, nombre, matrícula, interno)
 ├── dispositivos/page.tsx   → catálogo de dispositivos
 ├── instructivos/page.tsx   → selector de categoría + listado de recursos (buscador y filtro por tipo)
 ├── admin/
 │   ├── page.tsx            → dashboard de administración (solo rol admin)
-│   ├── operadores/page.tsx → CRUD de operadores (tabla + formulario)
+│   ├── operadores/page.tsx → CRUD de operadores (tabla + formulario, con subida de foto)
 │   ├── sectores/page.tsx   → CRUD de sectores (tabla + formulario)
 │   ├── dispositivos/page.tsx → CRUD de dispositivos (con subida de imagen)
 │   ├── avisos/page.tsx     → CRUD de avisos de Inicio
@@ -50,7 +51,8 @@ app/
     └── admin/              → rutas de escritura (solo rol admin, protegidas por middleware)
         ├── operadores/
         │   ├── route.ts        → GET (listar) y POST (crear)
-        │   └── [id]/route.ts   → PUT (editar) y DELETE (eliminar)
+        │   ├── [id]/route.ts   → PUT (editar) y DELETE (eliminar + borra la foto del bucket)
+        │   └── foto/route.ts   → POST: asegura el bucket, sube la foto y devuelve la URL pública
         ├── sectores/
         │   ├── route.ts        → GET (listar) y POST (crear)
         │   └── [id]/route.ts   → PUT (editar) y DELETE (eliminar)
@@ -71,7 +73,6 @@ app/
 components/
 ├── Navbar.tsx               → consciente del rol: muestra el link "Administración" solo a sesiones admin
 ├── LogoutButton.tsx
-├── TablaOperadores.tsx
 ├── CatalogoDispositivos.tsx → selector de sistema + buscador + grilla (cliente)
 ├── CardDispositivo.tsx      → tarjeta expandible de un dispositivo
 └── ListaInstructivos.tsx
@@ -79,8 +80,11 @@ lib/
 ├── session.ts              → firma/verifica el token de sesión
 ├── supabase.ts             → cliente de Supabase con anon key (lectura)
 ├── supabaseAdmin.ts        → cliente con service role key (escritura, ignora RLS) — SOLO importar desde rutas API del servidor
-├── storageDispositivos.ts  → helpers del bucket de imágenes (borrar por URL pública)
-├── tipos.ts                → tipos compartidos (Dispositivo, SistemaAlarma, Operador, Sector, Aviso, AccesoRapido)
+├── storageDispositivos.ts  → helpers del bucket de imágenes de dispositivos (borrar por URL pública)
+├── storageRecursos.ts      → helpers del bucket de archivos de recursos (borrar por URL pública)
+├── storageOperadores.ts    → helpers del bucket de fotos de operadores (asegura el bucket si no existe, borrar por URL pública)
+├── hooks/useRevelarAlEntrar.ts → IntersectionObserver reutilizable para la animación de entrada escalonada de listas/grillas
+├── tipos.ts                → tipos compartidos (Dispositivo, SistemaAlarma, Operador, Sector, Aviso, AccesoRapido, Recurso)
 └── validaciones.ts         → validación de datos de entrada de las APIs
 middleware.ts                → protege todas las rutas salvo /login y /api/login
 ```
@@ -116,7 +120,9 @@ El proyecto exige estas variables (en Vercel o en `.env.local` local):
 
 **sectores** — id, sector (nombre del sector), interno (opcional)
 
-**operadores** — id, nombre_operador, matricula, interno (opcional)
+**operadores** — id, nombre_operador, matricula, interno (opcional), foto_url (opcional). Se muestran en la página pública Nosotros como grilla de tarjetas (foto o placeholder con ícono de persona, nombre, matrícula, interno); ya no aparecen en Inicio.
+
+**Flujo de subida de foto de operadores:** el formulario del panel admin envía el archivo a `POST /api/admin/operadores/foto`, que primero se asegura de que exista el bucket público `operadores` (lo crea si falta, a diferencia de `dispositivos` y `recursos` que se crean a mano desde el dashboard), lo sube con nombre único (`<timestamp>-<nombre-saneado>`) y devuelve la URL pública; esa URL viaja luego en el `foto_url` del POST/PUT del operador. Al eliminar un operador (o reemplazar su foto al editar) se borra también la foto anterior del bucket.
 
 **dispositivos** — id, nombre_dispositivo, nomenclatura (código corto, ej. "YR", opcional), imagen_url (opcional), categoria, caracteristicas, descripcion, speech (guion para la conversación con el cliente, opcional), sistema (`'Verifast'` | `'Presense'`)
 
@@ -181,15 +187,17 @@ Imágenes y PDFs se guardan en Supabase Storage; las tablas solo referencian la 
 | Scaffold Next.js + Tailwind + estructura base | ✅ Completo |
 | Sistema de acceso con contraseña única (middleware, login, cookie de sesión) | ✅ Completo |
 | Roles de acceso `sector` / `admin` y protección de `/admin` | ✅ Completo |
-| Panel admin — dashboard y CRUD de Operadores | ✅ Completo |
+| Panel admin — dashboard y CRUD de Operadores (con subida de foto a Storage) | ✅ Completo |
 | Panel admin — CRUD de Sectores | ✅ Completo |
 | Panel admin — CRUD de Dispositivos (con subida de imagen a Storage) | ✅ Completo |
 | Panel admin — CRUD de Avisos y Accesos rápidos | ✅ Completo (falta crear las tablas en Supabase) |
 | Panel admin — CRUD de Recursos (con subida de archivos a Storage) | ✅ Completo |
 | Conexión a Supabase (`lib/supabase.ts`) | ✅ Completo |
-| Página Inicio (rediseño corporativo: logo, bienvenida roja/negra, avisos, operadores, sectores, accesos rápidos) | ✅ Completo (falta crear tablas `avisos` y `accesos_rapidos` en Supabase) |
+| Página Inicio (rediseño corporativo: logo, bienvenida roja/negra, avisos, sectores, accesos rápidos) | ✅ Completo (falta crear tablas `avisos` y `accesos_rapidos` en Supabase) |
+| Página Nosotros (grilla de operadores con foto) | ✅ Completo |
 | Página Dispositivos (selector Verifast/Presense, buscador, tarjetas expandibles) | ✅ Completo |
 | Página Instructivos (buscador, filtro por tipo, archivos y enlaces) | ✅ Completo |
+| Animación de entrada escalonada (Inicio, Dispositivos, Instructivos, Nosotros) | ✅ Completo |
 | Deploy a Vercel | ⏳ Pendiente |
 
 ---

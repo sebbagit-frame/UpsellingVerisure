@@ -36,7 +36,7 @@ const CATEGORIAS: {
     valor: "upselling",
     titulo: "Guías de Upselling",
     descripcion:
-      "Material de apoyo para ofrecer ampliaciones y nuevos dispositivos a clientes ya activos.",
+      "Material de apoyo para recordar el correcto procedimiento de las gestiones",
     Icono: TrendingUp,
   },
 ];

@@ -265,6 +265,7 @@ export interface DatosOperador {
   nombre_operador: string;
   matricula: string;
   interno: string | null;
+  foto_url: string | null;
 }
 
 /**
@@ -277,7 +278,7 @@ export function validarDatosOperador(
   if (typeof cuerpo !== "object" || cuerpo === null) {
     return { error: "Cuerpo de la solicitud inválido" };
   }
-  const { nombre_operador, matricula, interno } = cuerpo as Record<
+  const { nombre_operador, matricula, interno, foto_url } = cuerpo as Record<
     string,
     unknown
   >;
@@ -295,6 +296,10 @@ export function validarDatosOperador(
       matricula: matricula.trim(),
       interno:
         typeof interno === "string" && interno.trim() ? interno.trim() : null,
+      foto_url:
+        typeof foto_url === "string" && foto_url.trim()
+          ? foto_url.trim()
+          : null,
     },
   };
 }
