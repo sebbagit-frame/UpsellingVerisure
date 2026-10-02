@@ -2,16 +2,16 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Sector } from "@/lib/tipos";
+import { AccesoRapido } from "@/lib/tipos";
 
-interface FormularioSector {
-  sector: string;
-  interno: string;
+interface FormularioAccesoRapido {
+  titulo: string;
+  url: string;
 }
 
-const FORMULARIO_VACIO: FormularioSector = {
-  sector: "",
-  interno: "",
+const FORMULARIO_VACIO: FormularioAccesoRapido = {
+  titulo: "",
+  url: "",
 };
 
 interface Mensaje {
@@ -19,31 +19,31 @@ interface Mensaje {
   texto: string;
 }
 
-export default function AdminSectoresPage() {
-  const [sectores, setSectores] = useState<Sector[]>([]);
+export default function AdminAccesosRapidosPage() {
+  const [accesosRapidos, setAccesosRapidos] = useState<AccesoRapido[]>([]);
   const [cargando, setCargando] = useState(true);
   const [formulario, setFormulario] =
-    useState<FormularioSector>(FORMULARIO_VACIO);
-  const [sectorEnEdicionId, setSectorEnEdicionId] = useState<number | null>(
+    useState<FormularioAccesoRapido>(FORMULARIO_VACIO);
+  const [accesoEnEdicionId, setAccesoEnEdicionId] = useState<number | null>(
     null
   );
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState<Mensaje | null>(null);
   const formularioRef = useRef<HTMLFormElement>(null);
 
-  const cargarSectores = useCallback(async () => {
+  const cargarAccesosRapidos = useCallback(async () => {
     setCargando(true);
     try {
-      const respuesta = await fetch("/api/admin/sectores");
+      const respuesta = await fetch("/api/admin/accesos-rapidos");
       const datos = await respuesta.json();
       if (!respuesta.ok) {
         throw new Error(datos?.error);
       }
-      setSectores(datos.sectores);
+      setAccesosRapidos(datos.accesosRapidos);
     } catch {
       setMensaje({
         tipo: "error",
-        texto: "No se pudieron cargar los sectores",
+        texto: "No se pudieron cargar los accesos rápidos",
       });
     } finally {
       setCargando(false);
@@ -51,22 +51,22 @@ export default function AdminSectoresPage() {
   }, []);
 
   useEffect(() => {
-    cargarSectores();
-  }, [cargarSectores]);
+    cargarAccesosRapidos();
+  }, [cargarAccesosRapidos]);
 
-  function comenzarEdicion(sector: Sector) {
-    setSectorEnEdicionId(sector.id);
+  function comenzarEdicion(acceso: AccesoRapido) {
+    setAccesoEnEdicionId(acceso.id);
     // Lleva la vista al formulario, que queda arriba de la tabla
     formularioRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     setFormulario({
-      sector: sector.sector,
-      interno: sector.interno ?? "",
+      titulo: acceso.titulo,
+      url: acceso.url,
     });
     setMensaje(null);
   }
 
   function cancelarEdicion() {
-    setSectorEnEdicionId(null);
+    setAccesoEnEdicionId(null);
     setFormulario(FORMULARIO_VACIO);
   }
 
@@ -74,21 +74,29 @@ export default function AdminSectoresPage() {
     evento.preventDefault();
     setMensaje(null);
 
-    if (!formulario.sector.trim()) {
+    if (!formulario.titulo.trim()) {
       setMensaje({
         tipo: "error",
-        texto: "El nombre del sector no puede estar vacío",
+        texto: "El título del acceso rápido no puede estar vacío",
+      });
+      return;
+    }
+    const url = formulario.url.trim();
+    if (!/^https?:\/\/.+/.test(url)) {
+      setMensaje({
+        tipo: "error",
+        texto: "La URL debe ser un enlace válido que empiece con http:// o https://",
       });
       return;
     }
 
     setGuardando(true);
     try {
-      const esEdicion = sectorEnEdicionId !== null;
+      const esEdicion = accesoEnEdicionId !== null;
       const respuesta = await fetch(
         esEdicion
-          ? `/api/admin/sectores/${sectorEnEdicionId}`
-          : "/api/admin/sectores",
+          ? `/api/admin/accesos-rapidos/${accesoEnEdicionId}`
+          : "/api/admin/accesos-rapidos",
         {
           method: esEdicion ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -99,18 +107,18 @@ export default function AdminSectoresPage() {
       if (!respuesta.ok) {
         setMensaje({
           tipo: "error",
-          texto: datos?.error ?? "No se pudo guardar el sector",
+          texto: datos?.error ?? "No se pudo guardar el acceso rápido",
         });
         return;
       }
       setMensaje({
         tipo: "exito",
         texto: esEdicion
-          ? "Sector actualizado correctamente"
-          : "Sector creado correctamente",
+          ? "Acceso rápido actualizado correctamente"
+          : "Acceso rápido creado correctamente",
       });
       cancelarEdicion();
-      await cargarSectores();
+      await cargarAccesosRapidos();
     } catch {
       setMensaje({ tipo: "error", texto: "Error de conexión al guardar" });
     } finally {
@@ -118,9 +126,9 @@ export default function AdminSectoresPage() {
     }
   }
 
-  async function eliminarSector(sector: Sector) {
+  async function eliminarAcceso(acceso: AccesoRapido) {
     const confirmado = window.confirm(
-      `¿Eliminar el sector "${sector.sector}"? Esta acción no se puede deshacer.`
+      `¿Eliminar el acceso rápido "${acceso.titulo}"? Esta acción no se puede deshacer.`
     );
     if (!confirmado) {
       return;
@@ -128,22 +136,26 @@ export default function AdminSectoresPage() {
 
     setMensaje(null);
     try {
-      const respuesta = await fetch(`/api/admin/sectores/${sector.id}`, {
-        method: "DELETE",
-      });
+      const respuesta = await fetch(
+        `/api/admin/accesos-rapidos/${acceso.id}`,
+        { method: "DELETE" }
+      );
       const datos = await respuesta.json();
       if (!respuesta.ok) {
         setMensaje({
           tipo: "error",
-          texto: datos?.error ?? "No se pudo eliminar el sector",
+          texto: datos?.error ?? "No se pudo eliminar el acceso rápido",
         });
         return;
       }
-      if (sectorEnEdicionId === sector.id) {
+      if (accesoEnEdicionId === acceso.id) {
         cancelarEdicion();
       }
-      setMensaje({ tipo: "exito", texto: "Sector eliminado correctamente" });
-      await cargarSectores();
+      setMensaje({
+        tipo: "exito",
+        texto: "Acceso rápido eliminado correctamente",
+      });
+      await cargarAccesosRapidos();
     } catch {
       setMensaje({ tipo: "error", texto: "Error de conexión al eliminar" });
     }
@@ -158,7 +170,9 @@ export default function AdminSectoresPage() {
         >
           ← Volver al panel
         </Link>
-        <h1 className="font-titulos text-3xl font-bold tracking-tight">Sectores</h1>
+        <h1 className="font-titulos text-3xl font-bold tracking-tight">
+          Accesos rápidos
+        </h1>
       </div>
 
       {mensaje && (
@@ -179,39 +193,42 @@ export default function AdminSectoresPage() {
         className="mb-8 rounded-tarjeta border border-gray-200 bg-white p-6 shadow-tarjeta"
       >
         <h2 className="mb-4 font-titulos text-lg font-bold tracking-tight">
-          {sectorEnEdicionId !== null ? "Editar sector" : "Agregar sector"}
+          {accesoEnEdicionId !== null
+            ? "Editar acceso rápido"
+            : "Agregar acceso rápido"}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label
-              htmlFor="sector"
-              className="mb-1 block text-sm font-medium text-gray-700"
+              htmlFor="titulo"
+              className="mb-1.5 block text-sm font-medium text-gray-700"
             >
-              Nombre
+              Título
             </label>
             <input
-              id="sector"
+              id="titulo"
               type="text"
-              value={formulario.sector}
+              value={formulario.titulo}
               onChange={(evento) =>
-                setFormulario({ ...formulario, sector: evento.target.value })
+                setFormulario({ ...formulario, titulo: evento.target.value })
               }
               className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
             />
           </div>
           <div>
             <label
-              htmlFor="interno"
-              className="mb-1 block text-sm font-medium text-gray-700"
+              htmlFor="url"
+              className="mb-1.5 block text-sm font-medium text-gray-700"
             >
-              Interno
+              URL
             </label>
             <input
-              id="interno"
-              type="text"
-              value={formulario.interno}
+              id="url"
+              type="url"
+              placeholder="https://..."
+              value={formulario.url}
               onChange={(evento) =>
-                setFormulario({ ...formulario, interno: evento.target.value })
+                setFormulario({ ...formulario, url: evento.target.value })
               }
               className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
             />
@@ -225,11 +242,11 @@ export default function AdminSectoresPage() {
           >
             {guardando
               ? "Guardando..."
-              : sectorEnEdicionId !== null
+              : accesoEnEdicionId !== null
                 ? "Guardar cambios"
                 : "Agregar"}
           </button>
-          {sectorEnEdicionId !== null && (
+          {accesoEnEdicionId !== null && (
             <button
               type="button"
               onClick={cancelarEdicion}
@@ -242,41 +259,50 @@ export default function AdminSectoresPage() {
       </form>
 
       {cargando ? (
-        <p className="text-gray-600">Cargando sectores...</p>
-      ) : sectores.length === 0 ? (
+        <p className="text-gray-600">Cargando accesos rápidos...</p>
+      ) : accesosRapidos.length === 0 ? (
         <p className="rounded-tarjeta border border-gray-200 bg-white p-6 text-corporativo-textoSecundario">
-          No hay sectores cargados todavía.
+          No hay accesos rápidos cargados todavía.
         </p>
       ) : (
         <div className="overflow-x-auto rounded-tarjeta border border-gray-200 bg-white shadow-tarjeta">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-corporativo-textoSecundario">
               <tr>
-                <th className="px-4 py-3 font-semibold">Nombre</th>
-                <th className="px-4 py-3 font-semibold">Interno</th>
+                <th className="px-4 py-3 font-semibold">Título</th>
+                <th className="px-4 py-3 font-semibold">URL</th>
                 <th className="px-4 py-3 font-semibold">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {sectores.map((sector) => (
+              {accesosRapidos.map((acceso) => (
                 <tr
-                  key={sector.id}
+                  key={acceso.id}
                   className="border-b border-gray-100 transition-colors last:border-b-0 hover:bg-gray-50"
                 >
-                  <td className="px-4 py-3">{sector.sector}</td>
-                  <td className="px-4 py-3">{sector.interno ?? "—"}</td>
+                  <td className="px-4 py-3 font-medium">{acceso.titulo}</td>
+                  <td className="max-w-md px-4 py-3">
+                    <a
+                      href={acceso.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="break-all text-corporativo-rojo hover:underline"
+                    >
+                      {acceso.url}
+                    </a>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() => comenzarEdicion(sector)}
+                        onClick={() => comenzarEdicion(acceso)}
                         className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-corporativo-negro hover:text-corporativo-negro"
                       >
                         Editar
                       </button>
                       <button
                         type="button"
-                        onClick={() => eliminarSector(sector)}
+                        onClick={() => eliminarAcceso(acceso)}
                         className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:border-red-600 hover:bg-red-50"
                       >
                         Eliminar

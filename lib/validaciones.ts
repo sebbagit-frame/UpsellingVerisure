@@ -1,4 +1,4 @@
-import { SistemaAlarma } from "@/lib/tipos";
+import { RolOperador, SistemaAlarma } from "@/lib/tipos";
 
 const SISTEMAS_VALIDOS: SistemaAlarma[] = ["Verifast", "Presense"];
 
@@ -62,6 +62,205 @@ export function validarDatosDispositivo(
   };
 }
 
+import { CategoriaRecurso, GrupoRecurso, TipoRecurso } from "@/lib/tipos";
+
+const GRUPOS_RECURSO_VALIDOS: GrupoRecurso[] = [
+  "uso_diario",
+  "gestion",
+  "manuales",
+  "carga_base",
+];
+
+const TIPOS_RECURSO_VALIDOS: TipoRecurso[] = [
+  "pdf",
+  "excel",
+  "word",
+  "imagen",
+  "enlace",
+];
+const CATEGORIAS_RECURSO_VALIDAS: CategoriaRecurso[] = [
+  "usos_basicos",
+  "upselling",
+];
+
+export interface DatosRecurso {
+  titulo: string;
+  tipo: TipoRecurso;
+  categoria: CategoriaRecurso;
+  grupo: GrupoRecurso;
+  archivo_url: string | null;
+  enlace_externo: string | null;
+  dispositivo_id: number | null;
+}
+
+/**
+ * Valida el cuerpo recibido para crear o editar un recurso.
+ * Debe tener exactamente una fuente: archivo_url O enlace_externo.
+ */
+export function validarDatosRecurso(
+  cuerpo: unknown
+): { datos: DatosRecurso } | { error: string } {
+  if (typeof cuerpo !== "object" || cuerpo === null) {
+    return { error: "Cuerpo de la solicitud inválido" };
+  }
+  const {
+    titulo,
+    tipo,
+    categoria,
+    grupo,
+    archivo_url,
+    enlace_externo,
+    dispositivo_id,
+  } = cuerpo as Record<string, unknown>;
+
+  if (typeof titulo !== "string" || !titulo.trim()) {
+    return { error: "El título del recurso no puede estar vacío" };
+  }
+  if (
+    typeof tipo !== "string" ||
+    !TIPOS_RECURSO_VALIDOS.includes(tipo as TipoRecurso)
+  ) {
+    return { error: "El tipo debe ser pdf, excel, word, imagen o enlace" };
+  }
+  if (
+    typeof categoria !== "string" ||
+    !CATEGORIAS_RECURSO_VALIDAS.includes(categoria as CategoriaRecurso)
+  ) {
+    return { error: "La categoría debe ser usos_basicos o upselling" };
+  }
+  if (
+    typeof grupo !== "string" ||
+    !GRUPOS_RECURSO_VALIDOS.includes(grupo as GrupoRecurso)
+  ) {
+    return {
+      error: "El grupo debe ser uso_diario, gestion, manuales o carga_base",
+    };
+  }
+
+  const archivoNormalizado =
+    typeof archivo_url === "string" && archivo_url.trim()
+      ? archivo_url.trim()
+      : null;
+  const enlaceNormalizado =
+    typeof enlace_externo === "string" && enlace_externo.trim()
+      ? enlace_externo.trim()
+      : null;
+
+  if (!archivoNormalizado && !enlaceNormalizado) {
+    return { error: "El recurso debe tener un archivo o un enlace externo" };
+  }
+  if (archivoNormalizado && enlaceNormalizado) {
+    return {
+      error: "El recurso no puede tener archivo y enlace externo a la vez",
+    };
+  }
+  if (enlaceNormalizado && !/^https?:\/\/.+/.test(enlaceNormalizado)) {
+    return {
+      error: "El enlace externo debe empezar con http:// o https://",
+    };
+  }
+
+  let dispositivoIdNormalizado: number | null = null;
+  if (dispositivo_id !== null && dispositivo_id !== undefined && dispositivo_id !== "") {
+    const idNumerico = Number(dispositivo_id);
+    if (!Number.isInteger(idNumerico) || idNumerico <= 0) {
+      return { error: "El dispositivo asociado es inválido" };
+    }
+    dispositivoIdNormalizado = idNumerico;
+  }
+
+  return {
+    datos: {
+      titulo: titulo.trim(),
+      tipo: tipo as TipoRecurso,
+      categoria: categoria as CategoriaRecurso,
+      grupo: grupo as GrupoRecurso,
+      archivo_url: archivoNormalizado,
+      enlace_externo: enlaceNormalizado,
+      dispositivo_id: dispositivoIdNormalizado,
+    },
+  };
+}
+
+export interface DatosAviso {
+  titulo: string;
+  mensaje: string;
+}
+
+/**
+ * Valida el cuerpo recibido para crear o editar un aviso.
+ * Devuelve los datos normalizados o un mensaje de error.
+ */
+export function validarDatosAviso(
+  cuerpo: unknown
+): { datos: DatosAviso } | { error: string } {
+  if (typeof cuerpo !== "object" || cuerpo === null) {
+    return { error: "Cuerpo de la solicitud inválido" };
+  }
+  const { titulo, mensaje } = cuerpo as Record<string, unknown>;
+
+  if (typeof titulo !== "string" || !titulo.trim()) {
+    return { error: "El título del aviso no puede estar vacío" };
+  }
+  if (typeof mensaje !== "string" || !mensaje.trim()) {
+    return { error: "El mensaje del aviso no puede estar vacío" };
+  }
+
+  return {
+    datos: {
+      titulo: titulo.trim(),
+      mensaje: mensaje.trim(),
+    },
+  };
+}
+
+export interface DatosAccesoRapido {
+  titulo: string;
+  url: string;
+}
+
+/**
+ * Valida el cuerpo recibido para crear o editar un acceso rápido.
+ * La URL debe ser un enlace http(s) válido.
+ */
+export function validarDatosAccesoRapido(
+  cuerpo: unknown
+): { datos: DatosAccesoRapido } | { error: string } {
+  if (typeof cuerpo !== "object" || cuerpo === null) {
+    return { error: "Cuerpo de la solicitud inválido" };
+  }
+  const { titulo, url } = cuerpo as Record<string, unknown>;
+
+  if (typeof titulo !== "string" || !titulo.trim()) {
+    return { error: "El título del acceso rápido no puede estar vacío" };
+  }
+  if (typeof url !== "string" || !url.trim()) {
+    return { error: "La URL del acceso rápido no puede estar vacía" };
+  }
+
+  const urlNormalizada = url.trim();
+  let urlValida = false;
+  try {
+    const urlParseada = new URL(urlNormalizada);
+    urlValida =
+      urlParseada.protocol === "http:" || urlParseada.protocol === "https:";
+  } catch {
+    urlValida = false;
+  }
+  if (!urlValida) {
+    return {
+      error: "La URL debe ser un enlace válido que empiece con http:// o https://",
+    };
+  }
+
+  return {
+    datos: {
+      titulo: titulo.trim(),
+      url: urlNormalizada,
+    },
+  };
+}
+
 export interface DatosSector {
   sector: string;
   interno: string | null;
@@ -92,10 +291,20 @@ export function validarDatosSector(
   };
 }
 
+const ROLES_OPERADOR_VALIDOS: RolOperador[] = [
+  "Supervisor",
+  "Coordinador",
+  "Mentor",
+  "BO",
+  "Operador",
+];
+
 export interface DatosOperador {
   nombre_operador: string;
   matricula: string;
   interno: string | null;
+  foto_url: string | null;
+  rol: RolOperador;
 }
 
 /**
@@ -108,16 +317,22 @@ export function validarDatosOperador(
   if (typeof cuerpo !== "object" || cuerpo === null) {
     return { error: "Cuerpo de la solicitud inválido" };
   }
-  const { nombre_operador, matricula, interno } = cuerpo as Record<
-    string,
-    unknown
-  >;
+  const { nombre_operador, matricula, interno, foto_url, rol } =
+    cuerpo as Record<string, unknown>;
 
   if (typeof nombre_operador !== "string" || !nombre_operador.trim()) {
     return { error: "El nombre del operador no puede estar vacío" };
   }
   if (typeof matricula !== "string" || !matricula.trim()) {
     return { error: "La matrícula no puede estar vacía" };
+  }
+  if (
+    typeof rol !== "string" ||
+    !ROLES_OPERADOR_VALIDOS.includes(rol as RolOperador)
+  ) {
+    return {
+      error: "El rol debe ser Supervisor, Coordinador, Mentor, BO u Operador",
+    };
   }
 
   return {
@@ -126,6 +341,11 @@ export function validarDatosOperador(
       matricula: matricula.trim(),
       interno:
         typeof interno === "string" && interno.trim() ? interno.trim() : null,
+      foto_url:
+        typeof foto_url === "string" && foto_url.trim()
+          ? foto_url.trim()
+          : null,
+      rol: rol as RolOperador,
     },
   };
 }

@@ -6,14 +6,20 @@ const RUTAS_PUBLICAS = ["/login", "/api/login"];
 export async function middleware(solicitud: NextRequest) {
   const { pathname } = solicitud.nextUrl;
 
-  if (RUTAS_PUBLICAS.includes(pathname)) {
-    return NextResponse.next();
-  }
-
   const tokenSesion = solicitud.cookies.get(NOMBRE_COOKIE_SESION)?.value;
   const rolSesion = tokenSesion
     ? await verificarTokenSesion(tokenSesion)
     : null;
+
+  // Si ya hay una sesión válida, /login no debe mostrarse (evita que el
+  // Navbar aparezca ahí): se redirige directo al inicio
+  if (pathname === "/login" && rolSesion) {
+    return NextResponse.redirect(new URL("/", solicitud.url));
+  }
+
+  if (RUTAS_PUBLICAS.includes(pathname)) {
+    return NextResponse.next();
+  }
 
   // Las rutas de API de administración responden en JSON, sin redirecciones
   if (pathname.startsWith("/api/admin")) {
@@ -40,6 +46,7 @@ export async function middleware(solicitud: NextRequest) {
 }
 
 export const config = {
-  // Excluye archivos estáticos e internos de Next.js
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Excluye archivos estáticos e internos de Next.js y los assets públicos
+  // de /images (logos e ilustraciones, necesarios también en /login)
+  matcher: ["/((?!_next/static|_next/image|images/|favicon.ico).*)"],
 };

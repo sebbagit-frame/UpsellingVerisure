@@ -6,6 +6,7 @@ Sitio web interno, informativo, para operadores de una empresa de alarmas (clien
 
 ## Instrucciones para Claude
 
+- Responder siempre en **español**, incluidas las respuestas conversacionales fuera del código
 - Todo el código, comentarios y nombres van en **español**
 - No implementar autenticación de usuarios individuales bajo ninguna circunstancia — la única puerta de entrada es la contraseña compartida validada en el middleware
 - Mantener todo el stack dentro de planes gratuitos (Vercel, Supabase free tier); no incorporar servicios pagos
@@ -31,34 +32,48 @@ Sitio web interno, informativo, para operadores de una empresa de alarmas (clien
 
 ```
 app/
-├── layout.tsx              → layout base + Navbar (lee la cookie de sesión y le pasa el rol)
-├── page.tsx                → Inicio (matrículas, internos, sectores)
-├── login/page.tsx          → formulario de contraseña única
+├── layout.tsx              → layout base + Navbar (lee la cookie de sesión y le pasa el rol; el Navbar solo se renderiza si hay sesión activa)
+├── page.tsx                → Inicio (hero, "Somos Upselling" con acceso a Nosotros, avisos, sectores, accesos rápidos)
+├── login/page.tsx          → formulario de contraseña única, con fondo a pantalla completa
+├── nosotros/page.tsx       → grilla de tarjetas del equipo de operadores (foto, nombre, matrícula, interno)
 ├── dispositivos/page.tsx   → catálogo de dispositivos
-├── instructivos/page.tsx   → listado de PDFs
+├── instructivos/page.tsx   → selector de categoría + listado de recursos (buscador y filtro por tipo)
 ├── admin/
 │   ├── page.tsx            → dashboard de administración (solo rol admin)
-│   ├── operadores/page.tsx → CRUD de operadores (tabla + formulario)
+│   ├── operadores/page.tsx → CRUD de operadores (tabla + formulario, con subida de foto)
 │   ├── sectores/page.tsx   → CRUD de sectores (tabla + formulario)
-│   └── dispositivos/page.tsx → CRUD de dispositivos (con subida de imagen)
+│   ├── dispositivos/page.tsx → CRUD de dispositivos (con subida de imagen)
+│   ├── avisos/page.tsx     → CRUD de avisos de Inicio
+│   ├── accesos-rapidos/page.tsx → CRUD de accesos rápidos de Inicio
+│   └── recursos/page.tsx   → CRUD de recursos (con subida de archivos)
 └── api/
     ├── login/route.ts      → valida contraseña, setea cookie de sesión
     ├── logout/route.ts     → borra la cookie
     └── admin/              → rutas de escritura (solo rol admin, protegidas por middleware)
         ├── operadores/
         │   ├── route.ts        → GET (listar) y POST (crear)
-        │   └── [id]/route.ts   → PUT (editar) y DELETE (eliminar)
+        │   ├── [id]/route.ts   → PUT (editar) y DELETE (eliminar + borra la foto del bucket)
+        │   └── foto/route.ts   → POST: asegura el bucket, sube la foto y devuelve la URL pública
         ├── sectores/
         │   ├── route.ts        → GET (listar) y POST (crear)
         │   └── [id]/route.ts   → PUT (editar) y DELETE (eliminar)
-        └── dispositivos/
+        ├── dispositivos/
+        │   ├── route.ts        → GET (listar) y POST (crear)
+        │   ├── [id]/route.ts   → PUT (editar) y DELETE (eliminar + borra la imagen del bucket)
+        │   └── imagen/route.ts → POST: sube la imagen al bucket y devuelve la URL pública
+        ├── avisos/
+        │   ├── route.ts        → GET (listar) y POST (crear)
+        │   └── [id]/route.ts   → PUT (editar) y DELETE (eliminar)
+        ├── recursos/
+        │   ├── route.ts        → GET (listar) y POST (crear)
+        │   ├── [id]/route.ts   → PUT (editar) y DELETE (eliminar + borra el archivo del bucket)
+        │   └── archivo/route.ts → POST: sube el archivo al bucket y devuelve la URL pública
+        └── accesos-rapidos/
             ├── route.ts        → GET (listar) y POST (crear)
-            ├── [id]/route.ts   → PUT (editar) y DELETE (eliminar + borra la imagen del bucket)
-            └── imagen/route.ts → POST: sube la imagen al bucket y devuelve la URL pública
+            └── [id]/route.ts   → PUT (editar) y DELETE (eliminar)
 components/
-├── Navbar.tsx               → consciente del rol: muestra el link "Administración" solo a sesiones admin
+├── Navbar.tsx               → consciente del rol: muestra el link "Administración" solo a sesiones admin. No incluye "Nosotros": a esa página se llega desde el botón "Conocenos más" de Inicio
 ├── LogoutButton.tsx
-├── TablaOperadores.tsx
 ├── CatalogoDispositivos.tsx → selector de sistema + buscador + grilla (cliente)
 ├── CardDispositivo.tsx      → tarjeta expandible de un dispositivo
 └── ListaInstructivos.tsx
@@ -66,8 +81,11 @@ lib/
 ├── session.ts              → firma/verifica el token de sesión
 ├── supabase.ts             → cliente de Supabase con anon key (lectura)
 ├── supabaseAdmin.ts        → cliente con service role key (escritura, ignora RLS) — SOLO importar desde rutas API del servidor
-├── storageDispositivos.ts  → helpers del bucket de imágenes (borrar por URL pública)
-├── tipos.ts                → tipos compartidos (Dispositivo, SistemaAlarma, Operador, Sector)
+├── storageDispositivos.ts  → helpers del bucket de imágenes de dispositivos (borrar por URL pública)
+├── storageRecursos.ts      → helpers del bucket de archivos de recursos (borrar por URL pública)
+├── storageOperadores.ts    → helpers del bucket de fotos de operadores (asegura el bucket si no existe, borrar por URL pública)
+├── hooks/useRevelarAlEntrar.ts → IntersectionObserver reutilizable para la animación de entrada escalonada de listas/grillas
+├── tipos.ts                → tipos compartidos (Dispositivo, SistemaAlarma, Operador, Sector, Aviso, AccesoRapido, Recurso)
 └── validaciones.ts         → validación de datos de entrada de las APIs
 middleware.ts                → protege todas las rutas salvo /login y /api/login
 ```
@@ -103,11 +121,19 @@ El proyecto exige estas variables (en Vercel o en `.env.local` local):
 
 **sectores** — id, sector (nombre del sector), interno (opcional)
 
-**operadores** — id, nombre_operador, matricula, interno (opcional)
+**operadores** — id, nombre_operador, matricula, interno (opcional), foto_url (opcional), rol (`'Supervisor'` | `'Coordinador'` | `'Mentor'` | `'BO'` | `'Operador'`; `BO` se muestra como "BO (Back Office)"). Se muestran en la página pública Nosotros agrupados por rol, en secciones apiladas en ese orden fijo (Supervisor → Coordinador → Mentores/as → BO (Back Office) → Operadores); cada sección es una grilla de tarjetas (foto o placeholder con ícono de persona, nombre, matrícula, interno) y se oculta por completo si no tiene ningún integrante. Ya no aparecen en Inicio.
+
+**Flujo de subida de foto de operadores:** el formulario del panel admin envía el archivo a `POST /api/admin/operadores/foto`, que primero se asegura de que exista el bucket público `operadores` (lo crea si falta, a diferencia de `dispositivos` y `recursos` que se crean a mano desde el dashboard), lo sube con nombre único (`<timestamp>-<nombre-saneado>`) y devuelve la URL pública; esa URL viaja luego en el `foto_url` del POST/PUT del operador. Al eliminar un operador (o reemplazar su foto al editar) se borra también la foto anterior del bucket.
 
 **dispositivos** — id, nombre_dispositivo, nomenclatura (código corto, ej. "YR", opcional), imagen_url (opcional), categoria, caracteristicas, descripcion, speech (guion para la conversación con el cliente, opcional), sistema (`'Verifast'` | `'Presense'`)
 
-**instructivos** — id, titulo, pdf_url, dispositivo_id (FK → dispositivos, opcional), fecha_subida
+**recursos** — id, titulo, tipo (`'pdf'` | `'excel'` | `'word'` | `'imagen'` | `'enlace'`, con check constraint en minúsculas), categoria (`'usos_basicos'` | `'upselling'`), grupo (`'uso_diario'` | `'gestion'` | `'manuales'` | `'carga_base'`), archivo_url (opcional), enlace_externo (opcional), dispositivo_id (FK → dispositivos, opcional), fecha_subida. Cada recurso tiene **archivo_url o enlace_externo, nunca ambos**. Se muestran en la página Instructivos, que primero pide elegir categoría y luego los agrupa en tres secciones colapsables (acordeón) en orden fijo: Uso diario → Gestión → Manuales → Carga Base. Los grupos arrancan colapsados (solo se ven los encabezados), muestran la cantidad de recursos en el título y se ocultan por completo si quedan vacíos (incluso al filtrar por buscador o tipo). Los archivos van al bucket `recursos`.
+
+**Flujo de subida de archivos de recursos:** el formulario del panel admin envía el archivo y el tipo a `POST /api/admin/recursos/archivo`, que valida la extensión según el tipo (pdf → `.pdf`; excel → `.xls/.xlsx/.csv`; word → `.doc/.docx`; imagen → `.jpg/.jpeg/.png/.webp`, verificando además el mime-type), limita a 20 MB, lo sube al bucket público `recursos` con nombre único y devuelve la URL pública. Al eliminar un recurso (o reemplazar su archivo al editar) se borra el archivo anterior del bucket.
+
+**avisos** — id, titulo, mensaje. Se muestran como tarjetas destacadas al tope de Inicio; si la tabla está vacía (o no existe aún), la sección se oculta.
+
+**accesos_rapidos** — id, titulo, url. Barra inferior de botones en Inicio que abren la URL en pestaña nueva; misma lógica de ocultamiento que avisos.
 
 Imágenes y PDFs se guardan en Supabase Storage; las tablas solo referencian la URL pública.
 
@@ -162,14 +188,17 @@ Imágenes y PDFs se guardan en Supabase Storage; las tablas solo referencian la 
 | Scaffold Next.js + Tailwind + estructura base | ✅ Completo |
 | Sistema de acceso con contraseña única (middleware, login, cookie de sesión) | ✅ Completo |
 | Roles de acceso `sector` / `admin` y protección de `/admin` | ✅ Completo |
-| Panel admin — dashboard y CRUD de Operadores | ✅ Completo |
+| Panel admin — dashboard y CRUD de Operadores (con subida de foto a Storage) | ✅ Completo |
 | Panel admin — CRUD de Sectores | ✅ Completo |
 | Panel admin — CRUD de Dispositivos (con subida de imagen a Storage) | ✅ Completo |
-| Panel admin — Recursos | ⏳ Pendiente |
+| Panel admin — CRUD de Avisos y Accesos rápidos | ✅ Completo (falta crear las tablas en Supabase) |
+| Panel admin — CRUD de Recursos (con subida de archivos a Storage) | ✅ Completo |
 | Conexión a Supabase (`lib/supabase.ts`) | ✅ Completo |
-| Página Inicio (matrículas, internos, sectores) | ⏳ Pendiente |
+| Página Inicio (rediseño corporativo: logo, bienvenida roja/negra, avisos, sectores, accesos rápidos) | ✅ Completo (falta crear tablas `avisos` y `accesos_rapidos` en Supabase) |
+| Página Nosotros (grilla de operadores con foto) | ✅ Completo |
 | Página Dispositivos (selector Verifast/Presense, buscador, tarjetas expandibles) | ✅ Completo |
-| Página Instructivos | ⏳ Pendiente |
+| Página Instructivos (buscador, filtro por tipo, archivos y enlaces) | ✅ Completo |
+| Animación de entrada escalonada (Inicio, Dispositivos, Instructivos, Nosotros) | ✅ Completo |
 | Deploy a Vercel | ⏳ Pendiente |
 
 ---

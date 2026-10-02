@@ -17,8 +17,10 @@ export default function CardDispositivo({
   return (
     <article
       onClick={alAlternar}
-      className={`cursor-pointer overflow-hidden rounded-lg border bg-white shadow-sm transition hover:shadow-md ${
-        expandido ? "border-gray-400 sm:col-span-2" : "border-gray-200"
+      className={`cursor-pointer overflow-hidden rounded-tarjeta border bg-white transition hover:shadow-tarjeta ${
+        expandido
+          ? "border-corporativo-negro sm:col-span-2"
+          : "border-gray-200"
       }`}
     >
       <div
@@ -38,7 +40,7 @@ export default function CardDispositivo({
             }`}
           />
         ) : (
-          <div className="flex flex-col items-center gap-2 text-gray-400">
+          <div className="flex flex-col items-center gap-2 text-corporativo-textoSecundario">
             <ImageOff className="h-10 w-10" strokeWidth={1.5} />
             <span className="text-sm">Sin imagen</span>
           </div>
@@ -47,17 +49,19 @@ export default function CardDispositivo({
 
       <div className="p-5">
         <div className="flex items-start justify-between gap-2">
-          <h2 className="text-lg font-semibold">
+          <h2 className="font-titulos text-lg font-bold tracking-tight">
             {dispositivo.nombre_dispositivo}
             {dispositivo.nomenclatura && (
-              <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs font-mono font-medium text-white align-middle">
+              <span className="ml-2 rounded bg-corporativo-negro px-1.5 py-0.5 align-middle font-mono text-xs font-medium text-white">
                 {dispositivo.nomenclatura}
               </span>
             )}
           </h2>
         </div>
         {dispositivo.categoria && (
-          <p className="mt-1 text-sm text-gray-500">{dispositivo.categoria}</p>
+          <p className="mt-1 text-sm text-corporativo-textoSecundario">
+            {dispositivo.categoria}
+          </p>
         )}
 
         {expandido && (
@@ -83,9 +87,9 @@ export default function CardDispositivo({
               </div>
             )}
             {dispositivo.speech && (
-              <div className="rounded-md border border-sky-200 bg-sky-50 p-3">
-                <h3 className="mb-1 font-semibold text-sky-900">Speech</h3>
-                <p className="whitespace-pre-line text-sky-800">
+              <div className="rounded-md border-l-4 border-corporativo-rojo bg-red-50 p-3">
+                <h3 className="mb-1 font-semibold text-red-950">Speech</h3>
+                <p className="whitespace-pre-line text-neutral-700">
                   {dispositivo.speech}
                 </p>
               </div>
@@ -93,7 +97,7 @@ export default function CardDispositivo({
             {!dispositivo.caracteristicas &&
               !dispositivo.descripcion &&
               !dispositivo.speech && (
-              <p className="text-gray-500">
+              <p className="text-corporativo-textoSecundario">
                 Este dispositivo no tiene detalles cargados.
               </p>
             )}

@@ -1,19 +1,48 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Operador } from "@/lib/tipos";
+import { Operador, RolOperador } from "@/lib/tipos";
+
+const ROLES_OPERADOR: RolOperador[] = [
+  "Supervisor",
+  "Coordinador",
+  "Mentor",
+  "BO",
+  "Operador",
+];
+
+/** Texto visible de cada rol cuando difiere del valor guardado. */
+const ETIQUETAS_ROL: Record<RolOperador, string> = {
+  Supervisor: "Supervisor",
+  Coordinador: "Coordinador",
+  Mentor: "Mentor",
+  BO: "BO (Back Office)",
+  Operador: "Operador",
+};
+
+/** Iniciales para el avatar: primera letra de las dos primeras palabras. */
+function obtenerIniciales(nombreCompleto: string): string {
+  return nombreCompleto
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((palabra) => palabra[0]?.toUpperCase() ?? "")
+    .join("");
+}
 
 interface FormularioOperador {
   nombre_operador: string;
   matricula: string;
   interno: string;
+  rol: RolOperador;
 }
 
 const FORMULARIO_VACIO: FormularioOperador = {
   nombre_operador: "",
   matricula: "",
   interno: "",
+  rol: "Operador",
 };
 
 interface Mensaje {
@@ -29,8 +58,11 @@ export default function AdminOperadoresPage() {
   const [operadorEnEdicionId, setOperadorEnEdicionId] = useState<number | null>(
     null
   );
+  const [fotoActualUrl, setFotoActualUrl] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState<Mensaje | null>(null);
+  const formularioRef = useRef<HTMLFormElement>(null);
+  const inputArchivoRef = useRef<HTMLInputElement>(null);
 
   const cargarOperadores = useCallback(async () => {
     setCargando(true);
@@ -55,19 +87,58 @@ export default function AdminOperadoresPage() {
     cargarOperadores();
   }, [cargarOperadores]);
 
+  function limpiarInputArchivo() {
+    if (inputArchivoRef.current) {
+      inputArchivoRef.current.value = "";
+    }
+  }
+
   function comenzarEdicion(operador: Operador) {
     setOperadorEnEdicionId(operador.id);
+    // Lleva la vista al formulario, que queda arriba de la tabla
+    formularioRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     setFormulario({
       nombre_operador: operador.nombre_operador,
       matricula: operador.matricula,
       interno: operador.interno ?? "",
+      rol: operador.rol ?? "Operador",
     });
+    setFotoActualUrl(operador.foto_url);
+    limpiarInputArchivo();
     setMensaje(null);
   }
 
   function cancelarEdicion() {
     setOperadorEnEdicionId(null);
     setFormulario(FORMULARIO_VACIO);
+    setFotoActualUrl(null);
+    limpiarInputArchivo();
+  }
+
+  /** Sube la foto seleccionada (si hay) y devuelve su URL pública. */
+  async function subirFotoSiCorresponde(): Promise<
+    { url: string | null } | { error: string }
+  > {
+    const archivo = inputArchivoRef.current?.files?.[0];
+    if (!archivo) {
+      return { url: fotoActualUrl };
+    }
+
+    const formularioArchivo = new FormData();
+    formularioArchivo.append("archivo", archivo);
+    try {
+      const respuesta = await fetch("/api/admin/operadores/foto", {
+        method: "POST",
+        body: formularioArchivo,
+      });
+      const datos = await respuesta.json();
+      if (!respuesta.ok) {
+        return { error: datos?.error ?? "No se pudo subir la foto" };
+      }
+      return { url: datos.url };
+    } catch {
+      return { error: "Error de conexión al subir la foto" };
+    }
   }
 
   async function manejarEnvio(evento: FormEvent<HTMLFormElement>) {
@@ -88,6 +159,12 @@ export default function AdminOperadoresPage() {
 
     setGuardando(true);
     try {
+      const resultadoFoto = await subirFotoSiCorresponde();
+      if ("error" in resultadoFoto) {
+        setMensaje({ tipo: "error", texto: resultadoFoto.error });
+        return;
+      }
+
       const esEdicion = operadorEnEdicionId !== null;
       const respuesta = await fetch(
         esEdicion
@@ -96,7 +173,10 @@ export default function AdminOperadoresPage() {
         {
           method: esEdicion ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formulario),
+          body: JSON.stringify({
+            ...formulario,
+            foto_url: resultadoFoto.url,
+          }),
         }
       );
       const datos = await respuesta.json();
@@ -158,19 +238,21 @@ export default function AdminOperadoresPage() {
       <div className="mb-6 flex items-center gap-3">
         <Link
           href="/admin"
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-corporativo-negro hover:text-corporativo-negro"
         >
           ← Volver al panel
         </Link>
-        <h1 className="text-3xl font-bold">Operadores</h1>
+        <h1 className="font-titulos text-3xl font-bold tracking-tight">
+          Operadores
+        </h1>
       </div>
 
       {mensaje && (
         <p
-          className={`mb-4 rounded-md border px-4 py-2 text-sm ${
+          className={`mb-4 rounded-lg border-l-4 px-4 py-2.5 text-sm ${
             mensaje.tipo === "exito"
-              ? "border-green-200 bg-green-50 text-green-800"
-              : "border-red-200 bg-red-50 text-red-700"
+              ? "border-green-600 bg-green-50 text-green-800"
+              : "border-red-600 bg-red-50 text-red-700"
           }`}
         >
           {mensaje.texto}
@@ -178,15 +260,16 @@ export default function AdminOperadoresPage() {
       )}
 
       <form
+        ref={formularioRef}
         onSubmit={manejarEnvio}
-        className="mb-8 rounded-lg border border-gray-200 bg-white p-4"
+        className="mb-8 rounded-tarjeta border border-gray-200 bg-white p-6 shadow-tarjeta"
       >
-        <h2 className="mb-3 text-lg font-semibold">
+        <h2 className="mb-4 font-titulos text-lg font-bold tracking-tight">
           {operadorEnEdicionId !== null
             ? "Editar operador"
             : "Agregar operador"}
         </h2>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-4">
           <div>
             <label
               htmlFor="nombre_operador"
@@ -204,7 +287,7 @@ export default function AdminOperadoresPage() {
                   nombre_operador: evento.target.value,
                 })
               }
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
             />
           </div>
           <div>
@@ -221,7 +304,7 @@ export default function AdminOperadoresPage() {
               onChange={(evento) =>
                 setFormulario({ ...formulario, matricula: evento.target.value })
               }
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
             />
           </div>
           <div>
@@ -238,15 +321,70 @@ export default function AdminOperadoresPage() {
               onChange={(evento) =>
                 setFormulario({ ...formulario, interno: evento.target.value })
               }
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
             />
           </div>
+          <div>
+            <label
+              htmlFor="rol"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              Rol
+            </label>
+            <select
+              id="rol"
+              value={formulario.rol}
+              onChange={(evento) =>
+                setFormulario({
+                  ...formulario,
+                  rol: evento.target.value as RolOperador,
+                })
+              }
+              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm transition-colors focus:border-corporativo-negro focus:outline-none"
+            >
+              {ROLES_OPERADOR.map((rol) => (
+                <option key={rol} value={rol}>
+                  {ETIQUETAS_ROL[rol]}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
+
+        <div className="mt-3">
+          <label
+            htmlFor="foto"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
+            Foto
+          </label>
+          {fotoActualUrl && (
+            <div className="mb-2 flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={fotoActualUrl}
+                alt="Foto actual del operador"
+                className="h-16 w-16 rounded-full border border-gray-200 object-cover"
+              />
+              <span className="text-sm text-gray-600">
+                Foto actual — seleccioná un archivo para reemplazarla
+              </span>
+            </div>
+          )}
+          <input
+            id="foto"
+            ref={inputArchivoRef}
+            type="file"
+            accept="image/*"
+            className="block text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-corporativo-negro file:px-3.5 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-neutral-700"
+          />
+        </div>
+
         <div className="mt-4 flex gap-2">
           <button
             type="submit"
             disabled={guardando}
-            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+            className="rounded-lg bg-corporativo-negro px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-neutral-700 disabled:opacity-50"
           >
             {guardando
               ? "Guardando..."
@@ -258,7 +396,7 @@ export default function AdminOperadoresPage() {
             <button
               type="button"
               onClick={cancelarEdicion}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+              className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:border-corporativo-negro hover:text-corporativo-negro"
             >
               Cancelar
             </button>
@@ -269,17 +407,18 @@ export default function AdminOperadoresPage() {
       {cargando ? (
         <p className="text-gray-600">Cargando operadores...</p>
       ) : operadores.length === 0 ? (
-        <p className="rounded-lg border border-gray-200 bg-white p-6 text-gray-600">
+        <p className="rounded-tarjeta border border-gray-200 bg-white p-6 text-corporativo-textoSecundario">
           No hay operadores cargados todavía.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-x-auto rounded-tarjeta border border-gray-200 bg-white shadow-tarjeta">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-gray-200 bg-gray-50 text-gray-700">
+            <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-corporativo-textoSecundario">
               <tr>
                 <th className="px-4 py-3 font-semibold">Nombre</th>
                 <th className="px-4 py-3 font-semibold">Matrícula</th>
                 <th className="px-4 py-3 font-semibold">Interno</th>
+                <th className="px-4 py-3 font-semibold">Rol</th>
                 <th className="px-4 py-3 font-semibold">Acciones</th>
               </tr>
             </thead>
@@ -287,24 +426,43 @@ export default function AdminOperadoresPage() {
               {operadores.map((operador) => (
                 <tr
                   key={operador.id}
-                  className="border-b border-gray-100 last:border-b-0"
+                  className="border-b border-gray-100 transition-colors last:border-b-0 hover:bg-gray-50"
                 >
-                  <td className="px-4 py-3">{operador.nombre_operador}</td>
-                  <td className="px-4 py-3">{operador.matricula}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      {operador.foto_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={operador.foto_url}
+                          alt={operador.nombre_operador}
+                          className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-corporativo-negro text-xs font-semibold text-white">
+                          {obtenerIniciales(operador.nombre_operador)}
+                        </span>
+                      )}
+                      <span className="font-medium">
+                        {operador.nombre_operador}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-mono">{operador.matricula}</td>
                   <td className="px-4 py-3">{operador.interno ?? "—"}</td>
+                  <td className="px-4 py-3">{operador.rol ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => comenzarEdicion(operador)}
-                        className="rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100"
+                        className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-corporativo-negro hover:text-corporativo-negro"
                       >
                         Editar
                       </button>
                       <button
                         type="button"
                         onClick={() => eliminarOperador(operador)}
-                        className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                        className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:border-red-600 hover:bg-red-50"
                       >
                         Eliminar
                       </button>

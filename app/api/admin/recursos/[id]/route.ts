@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { validarDatosOperador } from "@/lib/validaciones";
-import { eliminarFotoDeStorage } from "@/lib/storageOperadores";
+import { validarDatosRecurso } from "@/lib/validaciones";
+import { eliminarArchivoDeStorage } from "@/lib/storageRecursos";
 
 function obtenerIdValido(id: string): number | null {
   const idNumerico = Number(id);
@@ -12,10 +12,10 @@ export async function PUT(
   solicitud: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const idOperador = obtenerIdValido(params.id);
-  if (!idOperador) {
+  const idRecurso = obtenerIdValido(params.id);
+  if (!idRecurso) {
     return NextResponse.json(
-      { error: "Identificador de operador inválido" },
+      { error: "Identificador de recurso inválido" },
       { status: 400 }
     );
   }
@@ -27,82 +27,82 @@ export async function PUT(
     return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
   }
 
-  const resultado = validarDatosOperador(cuerpo);
+  const resultado = validarDatosRecurso(cuerpo);
   if ("error" in resultado) {
     return NextResponse.json({ error: resultado.error }, { status: 400 });
   }
 
-  // Estado previo para limpiar la foto anterior si fue reemplazada
-  const { data: operadorPrevio } = await supabaseAdmin
-    .from("operadores")
-    .select("foto_url")
-    .eq("id", idOperador)
+  // Estado previo para limpiar el archivo anterior si fue reemplazado
+  const { data: recursoPrevio } = await supabaseAdmin
+    .from("recursos")
+    .select("archivo_url")
+    .eq("id", idRecurso)
     .maybeSingle();
 
   const { data, error } = await supabaseAdmin
-    .from("operadores")
+    .from("recursos")
     .update(resultado.datos)
-    .eq("id", idOperador)
+    .eq("id", idRecurso)
     .select()
     .maybeSingle();
 
   if (error) {
     return NextResponse.json(
-      { error: "No se pudo editar el operador" },
+      { error: "No se pudo editar el recurso" },
       { status: 500 }
     );
   }
   if (!data) {
     return NextResponse.json(
-      { error: "El operador no existe" },
+      { error: "El recurso no existe" },
       { status: 404 }
     );
   }
 
   if (
-    operadorPrevio?.foto_url &&
-    operadorPrevio.foto_url !== resultado.datos.foto_url
+    recursoPrevio?.archivo_url &&
+    recursoPrevio.archivo_url !== resultado.datos.archivo_url
   ) {
-    await eliminarFotoDeStorage(operadorPrevio.foto_url);
+    await eliminarArchivoDeStorage(recursoPrevio.archivo_url);
   }
 
-  return NextResponse.json({ operador: data });
+  return NextResponse.json({ recurso: data });
 }
 
 export async function DELETE(
   _solicitud: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const idOperador = obtenerIdValido(params.id);
-  if (!idOperador) {
+  const idRecurso = obtenerIdValido(params.id);
+  if (!idRecurso) {
     return NextResponse.json(
-      { error: "Identificador de operador inválido" },
+      { error: "Identificador de recurso inválido" },
       { status: 400 }
     );
   }
 
   const { data, error } = await supabaseAdmin
-    .from("operadores")
+    .from("recursos")
     .delete()
-    .eq("id", idOperador)
+    .eq("id", idRecurso)
     .select()
     .maybeSingle();
 
   if (error) {
     return NextResponse.json(
-      { error: "No se pudo eliminar el operador" },
+      { error: "No se pudo eliminar el recurso" },
       { status: 500 }
     );
   }
   if (!data) {
     return NextResponse.json(
-      { error: "El operador no existe" },
+      { error: "El recurso no existe" },
       { status: 404 }
     );
   }
 
-  if (data.foto_url) {
-    await eliminarFotoDeStorage(data.foto_url);
+  if (data.archivo_url) {
+    await eliminarArchivoDeStorage(data.archivo_url);
   }
 
   return NextResponse.json({ ok: true });

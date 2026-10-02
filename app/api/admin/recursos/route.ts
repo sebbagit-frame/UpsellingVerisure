@@ -1,20 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { validarDatosOperador } from "@/lib/validaciones";
+import { validarDatosRecurso } from "@/lib/validaciones";
 
 export async function GET() {
   const { data, error } = await supabaseAdmin
-    .from("operadores")
-    .select("id, nombre_operador, matricula, interno, foto_url, rol")
-    .order("nombre_operador");
+    .from("recursos")
+    .select(
+      "id, titulo, tipo, categoria, grupo, archivo_url, enlace_externo, dispositivo_id, fecha_subida, dispositivos(nombre_dispositivo)"
+    )
+    .order("fecha_subida", { ascending: false });
 
   if (error) {
     return NextResponse.json(
-      { error: "No se pudieron listar los operadores" },
+      { error: "No se pudieron listar los recursos" },
       { status: 500 }
     );
   }
-  return NextResponse.json({ operadores: data });
+  return NextResponse.json({ recursos: data });
 }
 
 export async function POST(solicitud: NextRequest) {
@@ -25,22 +27,22 @@ export async function POST(solicitud: NextRequest) {
     return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
   }
 
-  const resultado = validarDatosOperador(cuerpo);
+  const resultado = validarDatosRecurso(cuerpo);
   if ("error" in resultado) {
     return NextResponse.json({ error: resultado.error }, { status: 400 });
   }
 
   const { data, error } = await supabaseAdmin
-    .from("operadores")
+    .from("recursos")
     .insert(resultado.datos)
     .select()
     .single();
 
   if (error) {
     return NextResponse.json(
-      { error: "No se pudo crear el operador" },
+      { error: "No se pudo crear el recurso" },
       { status: 500 }
     );
   }
-  return NextResponse.json({ operador: data }, { status: 201 });
+  return NextResponse.json({ recurso: data }, { status: 201 });
 }
