@@ -62,9 +62,22 @@ export function validarDatosDispositivo(
   };
 }
 
-import { CategoriaRecurso, TipoRecurso } from "@/lib/tipos";
+import { CategoriaRecurso, GrupoRecurso, TipoRecurso } from "@/lib/tipos";
 
-const TIPOS_RECURSO_VALIDOS: TipoRecurso[] = ["pdf", "excel", "word", "enlace"];
+const GRUPOS_RECURSO_VALIDOS: GrupoRecurso[] = [
+  "uso_diario",
+  "gestion",
+  "manuales",
+  "carga_base",
+];
+
+const TIPOS_RECURSO_VALIDOS: TipoRecurso[] = [
+  "pdf",
+  "excel",
+  "word",
+  "imagen",
+  "enlace",
+];
 const CATEGORIAS_RECURSO_VALIDAS: CategoriaRecurso[] = [
   "usos_basicos",
   "upselling",
@@ -74,6 +87,7 @@ export interface DatosRecurso {
   titulo: string;
   tipo: TipoRecurso;
   categoria: CategoriaRecurso;
+  grupo: GrupoRecurso;
   archivo_url: string | null;
   enlace_externo: string | null;
   dispositivo_id: number | null;
@@ -89,8 +103,15 @@ export function validarDatosRecurso(
   if (typeof cuerpo !== "object" || cuerpo === null) {
     return { error: "Cuerpo de la solicitud inválido" };
   }
-  const { titulo, tipo, categoria, archivo_url, enlace_externo, dispositivo_id } =
-    cuerpo as Record<string, unknown>;
+  const {
+    titulo,
+    tipo,
+    categoria,
+    grupo,
+    archivo_url,
+    enlace_externo,
+    dispositivo_id,
+  } = cuerpo as Record<string, unknown>;
 
   if (typeof titulo !== "string" || !titulo.trim()) {
     return { error: "El título del recurso no puede estar vacío" };
@@ -99,13 +120,21 @@ export function validarDatosRecurso(
     typeof tipo !== "string" ||
     !TIPOS_RECURSO_VALIDOS.includes(tipo as TipoRecurso)
   ) {
-    return { error: "El tipo debe ser pdf, excel, word o enlace" };
+    return { error: "El tipo debe ser pdf, excel, word, imagen o enlace" };
   }
   if (
     typeof categoria !== "string" ||
     !CATEGORIAS_RECURSO_VALIDAS.includes(categoria as CategoriaRecurso)
   ) {
     return { error: "La categoría debe ser usos_basicos o upselling" };
+  }
+  if (
+    typeof grupo !== "string" ||
+    !GRUPOS_RECURSO_VALIDOS.includes(grupo as GrupoRecurso)
+  ) {
+    return {
+      error: "El grupo debe ser uso_diario, gestion, manuales o carga_base",
+    };
   }
 
   const archivoNormalizado =
@@ -145,6 +174,7 @@ export function validarDatosRecurso(
       titulo: titulo.trim(),
       tipo: tipo as TipoRecurso,
       categoria: categoria as CategoriaRecurso,
+      grupo: grupo as GrupoRecurso,
       archivo_url: archivoNormalizado,
       enlace_externo: enlaceNormalizado,
       dispositivo_id: dispositivoIdNormalizado,
@@ -265,6 +295,7 @@ const ROLES_OPERADOR_VALIDOS: RolOperador[] = [
   "Supervisor",
   "Coordinador",
   "Mentor",
+  "BO",
   "Operador",
 ];
 
@@ -300,7 +331,7 @@ export function validarDatosOperador(
     !ROLES_OPERADOR_VALIDOS.includes(rol as RolOperador)
   ) {
     return {
-      error: "El rol debe ser Supervisor, Coordinador, Mentor u Operador",
+      error: "El rol debe ser Supervisor, Coordinador, Mentor, BO u Operador",
     };
   }
 

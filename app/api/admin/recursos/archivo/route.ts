@@ -9,6 +9,7 @@ const EXTENSIONES_POR_TIPO: Record<string, string[]> = {
   pdf: [".pdf"],
   excel: [".xls", ".xlsx", ".csv"],
   word: [".doc", ".docx"],
+  imagen: [".jpg", ".jpeg", ".png", ".webp"],
 };
 
 /**
@@ -44,7 +45,9 @@ export async function POST(solicitud: NextRequest) {
   }
   if (typeof tipo !== "string" || !(tipo in EXTENSIONES_POR_TIPO)) {
     return NextResponse.json(
-      { error: "El tipo debe ser pdf, excel o word para subir un archivo" },
+      {
+        error: "El tipo debe ser pdf, excel, word o imagen para subir un archivo",
+      },
       { status: 400 }
     );
   }
@@ -56,6 +59,13 @@ export async function POST(solicitud: NextRequest) {
       {
         error: `El archivo debe tener extensión ${extensionesValidas.join(", ")} para el tipo ${tipo}`,
       },
+      { status: 400 }
+    );
+  }
+  // Refuerzo para imágenes: además de la extensión, el contenido debe ser imagen
+  if (tipo === "imagen" && !archivo.type.startsWith("image/")) {
+    return NextResponse.json(
+      { error: "El archivo debe ser una imagen" },
       { status: 400 }
     );
   }

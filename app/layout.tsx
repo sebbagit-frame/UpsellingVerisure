@@ -28,7 +28,7 @@ export default async function RootLayout({
 
   return (
     <html lang="es" className={fuenteTitulos.variable}>
-      <body className="min-h-screen overflow-x-hidden bg-corporativo-fondo text-gray-900 antialiased">
+      <body className="fondo-circuitos min-h-screen overflow-x-hidden text-gray-900 antialiased">
         {rolSesion && <Navbar rolSesion={rolSesion} />}
         <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
       </body>

@@ -1,14 +1,21 @@
 export type SistemaAlarma = "Verifast" | "Presense";
 
-export type TipoRecurso = "pdf" | "excel" | "word" | "enlace";
+export type TipoRecurso = "pdf" | "excel" | "word" | "imagen" | "enlace";
 
 export type CategoriaRecurso = "usos_basicos" | "upselling";
+
+export type GrupoRecurso =
+  | "uso_diario"
+  | "gestion"
+  | "manuales"
+  | "carga_base";
 
 export interface Recurso {
   id: number;
   titulo: string;
   tipo: TipoRecurso;
   categoria: CategoriaRecurso;
+  grupo: GrupoRecurso;
   archivo_url: string | null;
   enlace_externo: string | null;
   dispositivo_id: number | null;
@@ -35,7 +42,12 @@ export interface Sector {
   interno: string | null;
 }
 
-export type RolOperador = "Supervisor" | "Coordinador" | "Mentor" | "Operador";
+export type RolOperador =
+  | "Supervisor"
+  | "Coordinador"
+  | "Mentor"
+  | "BO"
+  | "Operador";
 
 export interface Operador {
   id: number;

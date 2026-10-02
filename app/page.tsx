@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight, Megaphone } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { AccesoRapido, Aviso, Sector } from "@/lib/tipos";
@@ -10,6 +11,10 @@ import {
   useRevelarAlEntrar,
 } from "@/lib/hooks/useRevelarAlEntrar";
 
+const TEXTO_SOMOS_UPSELLING = `En Verisure, nuestra misión es llevar la seguridad de nuestros clientes al siguiente nivel. Somos un equipo de ventas unido y con una competencia 100% sana. Nos enfocamos en alcanzar y superar los objetivos, pero siempre pasándola bien en el proceso.
+
+Acá adentro, cada venta se festeja con aplausos, y cada cierre de mes se celebra saliendo a tomar algo todos juntos.`;
+
 export default function InicioPage() {
   const [sectores, setSectores] = useState<Sector[]>([]);
   const [avisos, setAvisos] = useState<Aviso[]>([]);
@@ -17,6 +22,10 @@ export default function InicioPage() {
   const [cargando, setCargando] = useState(true);
   const [errorDeCarga, setErrorDeCarga] = useState(false);
 
+  const {
+    referencia: referenciaSomosUpselling,
+    visible: somosUpsellingVisible,
+  } = useRevelarAlEntrar<HTMLDivElement>();
   const { referencia: referenciaAvisos, visible: avisosVisibles } =
     useRevelarAlEntrar<HTMLDivElement>();
   const { referencia: referenciaSectores, visible: sectoresVisibles } =
@@ -70,7 +79,7 @@ export default function InicioPage() {
       {/* Hero de bienvenida: fondo a pantalla completa, composición asimétrica.
           "-mt-8" cancela el padding superior del <main> del layout para que
           la franja apoye contra el navbar */}
-      <section className="relative left-1/2 -mt-8 mb-10 w-screen -translate-x-1/2 overflow-hidden">
+      <section className="relative left-1/2 -mt-8 w-screen -translate-x-1/2 overflow-hidden">
         {/* Bloque negro de fondo: entra deslizándose desde la izquierda */}
         <div
           aria-hidden
@@ -137,6 +146,51 @@ export default function InicioPage() {
               unoptimized
               className="object-contain object-bottom"
               sizes="(min-width: 640px) 224px, 128px"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Somos Upselling: presentación del equipo, con acceso a Nosotros.
+          Franja blanca de ancho completo para contrastar con el fondo gris */}
+      <section className="relative left-1/2 mb-12 w-screen -translate-x-1/2 border-b border-gray-200 bg-white py-14">
+        <div
+          ref={referenciaSomosUpselling}
+          className="mx-auto grid max-w-5xl items-center gap-8 px-4 sm:grid-cols-2 sm:gap-10"
+        >
+          <div
+            className={
+              somosUpsellingVisible ? "animar-aparicion" : "opacity-0"
+            }
+            style={estiloRetrasoEscalonado(0, 130)}
+          >
+            <h2 className="font-titulos text-3xl font-bold tracking-tight sm:text-4xl">
+              Somos UPSELLING
+            </h2>
+            <p className="mt-5 whitespace-pre-line leading-relaxed text-neutral-700">
+              {TEXTO_SOMOS_UPSELLING}
+            </p>
+            <Link
+              href="/nosotros"
+              className="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-corporativo-rojo px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+            >
+              Conocenos más
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div
+            className={`relative aspect-square w-full overflow-hidden rounded-tarjeta shadow-tarjeta sm:aspect-[4/3] ${
+              somosUpsellingVisible ? "animar-aparicion" : "opacity-0"
+            }`}
+            style={estiloRetrasoEscalonado(1, 130)}
+          >
+            <Image
+              src="/images/general/foto-grupal.jpg"
+              alt="Equipo de Upselling"
+              fill
+              className="object-cover object-center"
+              sizes="(min-width: 640px) 50vw, 100vw"
             />
           </div>
         </div>

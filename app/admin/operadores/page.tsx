@@ -8,8 +8,18 @@ const ROLES_OPERADOR: RolOperador[] = [
   "Supervisor",
   "Coordinador",
   "Mentor",
+  "BO",
   "Operador",
 ];
+
+/** Texto visible de cada rol cuando difiere del valor guardado. */
+const ETIQUETAS_ROL: Record<RolOperador, string> = {
+  Supervisor: "Supervisor",
+  Coordinador: "Coordinador",
+  Mentor: "Mentor",
+  BO: "BO (Back Office)",
+  Operador: "Operador",
+};
 
 /** Iniciales para el avatar: primera letra de las dos primeras palabras. */
 function obtenerIniciales(nombreCompleto: string): string {
@@ -334,7 +344,7 @@ export default function AdminOperadoresPage() {
             >
               {ROLES_OPERADOR.map((rol) => (
                 <option key={rol} value={rol}>
-                  {rol}
+                  {ETIQUETAS_ROL[rol]}
                 </option>
               ))}
             </select>

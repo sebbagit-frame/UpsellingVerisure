@@ -5,14 +5,17 @@ import Link from "next/link";
 import {
   CategoriaRecurso,
   Dispositivo,
+  GrupoRecurso,
   Recurso,
   TipoRecurso,
 } from "@/lib/tipos";
+import IconoTipoRecurso from "@/components/IconoTipoRecurso";
 
 interface FormularioRecurso {
   titulo: string;
   tipo: TipoRecurso;
   categoria: CategoriaRecurso;
+  grupo: GrupoRecurso;
   dispositivo_id: string;
   enlace_externo: string;
 }
@@ -21,6 +24,7 @@ const FORMULARIO_VACIO: FormularioRecurso = {
   titulo: "",
   tipo: "pdf",
   categoria: "usos_basicos",
+  grupo: "gestion",
   dispositivo_id: "",
   enlace_externo: "",
 };
@@ -29,12 +33,28 @@ const ETIQUETAS_TIPO: Record<TipoRecurso, string> = {
   pdf: "PDF",
   excel: "Excel",
   word: "Word",
+  imagen: "Imagen",
   enlace: "Enlace",
+};
+
+/** Formatos que acepta el input de archivo según el tipo elegido. */
+const FORMATOS_ACEPTADOS: Record<string, string> = {
+  pdf: ".pdf",
+  excel: ".xls,.xlsx,.csv",
+  word: ".doc,.docx",
+  imagen: ".jpg,.jpeg,.png,.webp",
 };
 
 const ETIQUETAS_CATEGORIA: Record<CategoriaRecurso, string> = {
   usos_basicos: "Usos básicos",
   upselling: "Upselling",
+};
+
+const ETIQUETAS_GRUPO: Record<GrupoRecurso, string> = {
+  uso_diario: "Uso diario",
+  gestion: "Gestión",
+  manuales: "Manuales",
+  carga_base: "Carga Base",
 };
 
 interface Mensaje {
@@ -103,6 +123,7 @@ export default function AdminRecursosPage() {
       titulo: recurso.titulo,
       tipo: recurso.tipo,
       categoria: recurso.categoria,
+      grupo: recurso.grupo,
       dispositivo_id: recurso.dispositivo_id?.toString() ?? "",
       enlace_externo: recurso.enlace_externo ?? "",
     });
@@ -195,6 +216,7 @@ export default function AdminRecursosPage() {
             titulo: formulario.titulo,
             tipo: formulario.tipo,
             categoria: formulario.categoria,
+            grupo: formulario.grupo,
             dispositivo_id: formulario.dispositivo_id || null,
             archivo_url: esTipoConArchivo ? archivoUrl : null,
             enlace_externo: esTipoConArchivo
@@ -358,6 +380,28 @@ export default function AdminRecursosPage() {
             </select>
           </div>
           <div>
+            <label htmlFor="grupo" className={claseLabel}>
+              Grupo
+            </label>
+            <select
+              id="grupo"
+              value={formulario.grupo}
+              onChange={(evento) =>
+                setFormulario({
+                  ...formulario,
+                  grupo: evento.target.value as GrupoRecurso,
+                })
+              }
+              className={claseInput}
+            >
+              {(Object.keys(ETIQUETAS_GRUPO) as GrupoRecurso[]).map((grupo) => (
+                <option key={grupo} value={grupo}>
+                  {ETIQUETAS_GRUPO[grupo]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label htmlFor="dispositivo_id" className={claseLabel}>
               Dispositivo asociado (opcional)
             </label>
@@ -406,6 +450,7 @@ export default function AdminRecursosPage() {
                 id="archivo"
                 ref={inputArchivoRef}
                 type="file"
+                accept={FORMATOS_ACEPTADOS[formulario.tipo]}
                 className="block text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-corporativo-negro file:px-3.5 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-neutral-700"
               />
             </div>
@@ -469,6 +514,7 @@ export default function AdminRecursosPage() {
                 <th className="px-4 py-3 font-semibold">Título</th>
                 <th className="px-4 py-3 font-semibold">Tipo</th>
                 <th className="px-4 py-3 font-semibold">Categoría</th>
+                <th className="px-4 py-3 font-semibold">Grupo</th>
                 <th className="px-4 py-3 font-semibold">Dispositivo</th>
                 <th className="px-4 py-3 font-semibold">Fuente</th>
                 <th className="px-4 py-3 font-semibold">Acciones</th>
@@ -481,9 +527,17 @@ export default function AdminRecursosPage() {
                   className="border-b border-gray-100 transition-colors last:border-b-0 hover:bg-gray-50"
                 >
                   <td className="px-4 py-3 font-medium">{recurso.titulo}</td>
-                  <td className="px-4 py-3">{ETIQUETAS_TIPO[recurso.tipo]}</td>
+                  <td className="px-4 py-3">
+                    <span className="flex items-center gap-2">
+                      <IconoTipoRecurso tipo={recurso.tipo} tamano="chico" />
+                      {ETIQUETAS_TIPO[recurso.tipo]}
+                    </span>
+                  </td>
                   <td className="px-4 py-3">
                     {ETIQUETAS_CATEGORIA[recurso.categoria]}
+                  </td>
+                  <td className="px-4 py-3">
+                    {ETIQUETAS_GRUPO[recurso.grupo]}
                   </td>
                   <td className="px-4 py-3">
                     {recurso.dispositivos?.nombre_dispositivo ?? "—"}

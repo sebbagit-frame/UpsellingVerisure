@@ -4,16 +4,19 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
+  ChevronDown,
   ExternalLink,
-  FileSpreadsheet,
-  FileText,
-  FileType,
-  Link as IconoEnlace,
   LucideIcon,
   TrendingUp,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { CategoriaRecurso, Recurso, TipoRecurso } from "@/lib/tipos";
+import IconoTipoRecurso from "@/components/IconoTipoRecurso";
+import {
+  CategoriaRecurso,
+  GrupoRecurso,
+  Recurso,
+  TipoRecurso,
+} from "@/lib/tipos";
 import {
   estiloRetrasoEscalonado,
   useRevelarAlEntrar,
@@ -50,6 +53,7 @@ const ETIQUETAS_POR_TIPO: Record<TipoRecurso, string> = {
   pdf: "PDF",
   excel: "Excel",
   word: "Word",
+  imagen: "Imagen",
   enlace: "Enlace",
 };
 
@@ -58,15 +62,17 @@ const FILTROS: ("Todos" | TipoRecurso)[] = [
   "pdf",
   "excel",
   "word",
+  "imagen",
   "enlace",
 ];
 
-const ICONOS_POR_TIPO: Record<TipoRecurso, LucideIcon> = {
-  pdf: FileText,
-  excel: FileSpreadsheet,
-  word: FileType,
-  enlace: IconoEnlace,
-};
+/** Grupos del acordeón, en el orden en que se muestran. */
+const GRUPOS_EN_ORDEN: { valor: GrupoRecurso; titulo: string }[] = [
+  { valor: "uso_diario", titulo: "Uso diario" },
+  { valor: "gestion", titulo: "Gestión" },
+  { valor: "manuales", titulo: "Manuales" },
+  { valor: "carga_base", titulo: "Carga Base" },
+];
 
 function formatearFecha(fechaIso: string): string {
   const fecha = new Date(fechaIso);
@@ -79,6 +85,40 @@ function formatearFecha(fechaIso: string): string {
       });
 }
 
+/** Fila de un recurso dentro de un grupo del acordeón. */
+function TarjetaRecurso({ recurso }: { recurso: Recurso }) {
+  const urlDestino = recurso.archivo_url ?? recurso.enlace_externo;
+  const fecha = formatearFecha(recurso.fecha_subida);
+
+  return (
+    <article className="flex items-center gap-4 rounded-tarjeta border border-gray-200 bg-white p-4 transition-shadow hover:shadow-tarjeta">
+      <IconoTipoRecurso tipo={recurso.tipo} />
+      <div className="min-w-0 flex-1">
+        <h2 className="truncate font-titulos font-bold tracking-tight">
+          {recurso.titulo}
+        </h2>
+        <p className="mt-0.5 text-sm text-corporativo-textoSecundario">
+          {ETIQUETAS_POR_TIPO[recurso.tipo] ?? recurso.tipo}
+          {recurso.dispositivos?.nombre_dispositivo &&
+            ` · ${recurso.dispositivos.nombre_dispositivo}`}
+          {fecha && ` · ${fecha}`}
+        </p>
+      </div>
+      {urlDestino && (
+        <a
+          href={urlDestino}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-corporativo-rojo px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+        >
+          Abrir
+          <ExternalLink className="h-4 w-4" />
+        </a>
+      )}
+    </article>
+  );
+}
+
 export default function ListaInstructivos() {
   const [recursos, setRecursos] = useState<Recurso[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -87,6 +127,16 @@ export default function ListaInstructivos() {
   const [filtroTipo, setFiltroTipo] = useState<"Todos" | TipoRecurso>("Todos");
   const [categoriaSeleccionada, setCategoriaSeleccionada] =
     useState<CategoriaRecurso | null>(null);
+  // Los grupos arrancan colapsados; acá se guardan solo los que el usuario abrió
+  const [gruposAbiertos, setGruposAbiertos] = useState<GrupoRecurso[]>([]);
+
+  function alternarGrupo(grupo: GrupoRecurso) {
+    setGruposAbiertos((abiertos) =>
+      abiertos.includes(grupo)
+        ? abiertos.filter((valor) => valor !== grupo)
+        : [...abiertos, grupo]
+    );
+  }
 
   const { referencia: referenciaLista, visible: listaVisible } =
     useRevelarAlEntrar<HTMLDivElement>();
@@ -100,7 +150,7 @@ export default function ListaInstructivos() {
       const { data, error } = await supabase
         .from("recursos")
         .select(
-          "id, titulo, tipo, categoria, archivo_url, enlace_externo, dispositivo_id, fecha_subida, dispositivos(nombre_dispositivo)"
+          "id, titulo, tipo, categoria, grupo, archivo_url, enlace_externo, dispositivo_id, fecha_subida, dispositivos(nombre_dispositivo)"
         )
         .order("fecha_subida", { ascending: false });
 
@@ -143,12 +193,14 @@ export default function ListaInstructivos() {
     setCategoriaSeleccionada(categoria);
     setTerminoBusqueda("");
     setFiltroTipo("Todos");
+    setGruposAbiertos([]);
   }
 
   function volverAlSelector() {
     setCategoriaSeleccionada(null);
     setTerminoBusqueda("");
     setFiltroTipo("Todos");
+    setGruposAbiertos([]);
   }
 
   if (cargando) {
@@ -271,46 +323,51 @@ export default function ListaInstructivos() {
               No se encontraron recursos con ese criterio de búsqueda.
             </p>
           ) : (
-            <div ref={referenciaLista} className="space-y-3">
-              {recursosFiltrados.map((recurso, indice) => {
-                const Icono = ICONOS_POR_TIPO[recurso.tipo] ?? FileText;
-                const urlDestino =
-                  recurso.archivo_url ?? recurso.enlace_externo;
-                const fecha = formatearFecha(recurso.fecha_subida);
+            <div ref={referenciaLista} className="space-y-4">
+              {GRUPOS_EN_ORDEN.map(({ valor, titulo }, indice) => {
+                const recursosDelGrupo = recursosFiltrados.filter(
+                  (recurso) => recurso.grupo === valor
+                );
+                // Un grupo sin recursos (o sin resultados tras filtrar) no se muestra
+                if (recursosDelGrupo.length === 0) {
+                  return null;
+                }
+                const abierto = gruposAbiertos.includes(valor);
                 return (
-                  <article
-                    key={recurso.id}
-                    className={`flex items-center gap-4 rounded-tarjeta border border-gray-200 bg-white p-4 transition-shadow hover:shadow-tarjeta ${
+                  <section
+                    key={valor}
+                    className={`overflow-hidden rounded-tarjeta border border-gray-200 bg-white ${
                       listaVisible ? "animar-aparicion" : "opacity-0"
                     }`}
-                    style={estiloRetrasoEscalonado(indice, 60)}
+                    style={estiloRetrasoEscalonado(indice, 110)}
                   >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-corporativo-negro text-white">
-                      <Icono className="h-5 w-5" strokeWidth={1.75} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <h2 className="truncate font-titulos font-bold tracking-tight">
-                        {recurso.titulo}
-                      </h2>
-                      <p className="mt-0.5 text-sm text-corporativo-textoSecundario">
-                        {ETIQUETAS_POR_TIPO[recurso.tipo] ?? recurso.tipo}
-                        {recurso.dispositivos?.nombre_dispositivo &&
-                          ` · ${recurso.dispositivos.nombre_dispositivo}`}
-                        {fecha && ` · ${fecha}`}
-                      </p>
-                    </div>
-                    {urlDestino && (
-                      <a
-                        href={urlDestino}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg bg-corporativo-rojo px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
-                      >
-                        Abrir
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
+                    <button
+                      type="button"
+                      onClick={() => alternarGrupo(valor)}
+                      aria-expanded={abierto}
+                      className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-gray-50"
+                    >
+                      <span className="font-titulos text-lg font-bold tracking-tight">
+                        {titulo}{" "}
+                        <span className="text-corporativo-textoSecundario">
+                          ({recursosDelGrupo.length})
+                        </span>
+                      </span>
+                      <ChevronDown
+                        className={`h-5 w-5 shrink-0 text-corporativo-textoSecundario transition-transform duration-200 ${
+                          abierto ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {abierto && (
+                      <div className="space-y-3 border-t border-gray-200 bg-corporativo-fondo p-4">
+                        {recursosDelGrupo.map((recurso) => (
+                          <TarjetaRecurso key={recurso.id} recurso={recurso} />
+                        ))}
+                      </div>
                     )}
-                  </article>
+                  </section>
                 );
               })}
             </div>

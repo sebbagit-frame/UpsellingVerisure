@@ -6,6 +6,7 @@ Sitio web interno, informativo, para operadores de una empresa de alarmas (clien
 
 ## Instrucciones para Claude
 
+- Responder siempre en **español**, incluidas las respuestas conversacionales fuera del código
 - Todo el código, comentarios y nombres van en **español**
 - No implementar autenticación de usuarios individuales bajo ninguna circunstancia — la única puerta de entrada es la contraseña compartida validada en el middleware
 - Mantener todo el stack dentro de planes gratuitos (Vercel, Supabase free tier); no incorporar servicios pagos
@@ -32,7 +33,7 @@ Sitio web interno, informativo, para operadores de una empresa de alarmas (clien
 ```
 app/
 ├── layout.tsx              → layout base + Navbar (lee la cookie de sesión y le pasa el rol; el Navbar solo se renderiza si hay sesión activa)
-├── page.tsx                → Inicio (logo, bienvenida, avisos, sectores, accesos rápidos)
+├── page.tsx                → Inicio (hero, "Somos Upselling" con acceso a Nosotros, avisos, sectores, accesos rápidos)
 ├── login/page.tsx          → formulario de contraseña única, con fondo a pantalla completa
 ├── nosotros/page.tsx       → grilla de tarjetas del equipo de operadores (foto, nombre, matrícula, interno)
 ├── dispositivos/page.tsx   → catálogo de dispositivos
@@ -71,7 +72,7 @@ app/
             ├── route.ts        → GET (listar) y POST (crear)
             └── [id]/route.ts   → PUT (editar) y DELETE (eliminar)
 components/
-├── Navbar.tsx               → consciente del rol: muestra el link "Administración" solo a sesiones admin
+├── Navbar.tsx               → consciente del rol: muestra el link "Administración" solo a sesiones admin. No incluye "Nosotros": a esa página se llega desde el botón "Conocenos más" de Inicio
 ├── LogoutButton.tsx
 ├── CatalogoDispositivos.tsx → selector de sistema + buscador + grilla (cliente)
 ├── CardDispositivo.tsx      → tarjeta expandible de un dispositivo
@@ -120,15 +121,15 @@ El proyecto exige estas variables (en Vercel o en `.env.local` local):
 
 **sectores** — id, sector (nombre del sector), interno (opcional)
 
-**operadores** — id, nombre_operador, matricula, interno (opcional), foto_url (opcional), rol (`'Supervisor'` | `'Coordinador'` | `'Mentor'` | `'Operador'`). Se muestran en la página pública Nosotros agrupados por rol, en secciones apiladas en ese orden fijo (Supervisor → Coordinador → Mentores/as → Operadores); cada sección es una grilla de tarjetas (foto o placeholder con ícono de persona, nombre, matrícula, interno) y se oculta por completo si no tiene ningún integrante. Ya no aparecen en Inicio.
+**operadores** — id, nombre_operador, matricula, interno (opcional), foto_url (opcional), rol (`'Supervisor'` | `'Coordinador'` | `'Mentor'` | `'BO'` | `'Operador'`; `BO` se muestra como "BO (Back Office)"). Se muestran en la página pública Nosotros agrupados por rol, en secciones apiladas en ese orden fijo (Supervisor → Coordinador → Mentores/as → BO (Back Office) → Operadores); cada sección es una grilla de tarjetas (foto o placeholder con ícono de persona, nombre, matrícula, interno) y se oculta por completo si no tiene ningún integrante. Ya no aparecen en Inicio.
 
 **Flujo de subida de foto de operadores:** el formulario del panel admin envía el archivo a `POST /api/admin/operadores/foto`, que primero se asegura de que exista el bucket público `operadores` (lo crea si falta, a diferencia de `dispositivos` y `recursos` que se crean a mano desde el dashboard), lo sube con nombre único (`<timestamp>-<nombre-saneado>`) y devuelve la URL pública; esa URL viaja luego en el `foto_url` del POST/PUT del operador. Al eliminar un operador (o reemplazar su foto al editar) se borra también la foto anterior del bucket.
 
 **dispositivos** — id, nombre_dispositivo, nomenclatura (código corto, ej. "YR", opcional), imagen_url (opcional), categoria, caracteristicas, descripcion, speech (guion para la conversación con el cliente, opcional), sistema (`'Verifast'` | `'Presense'`)
 
-**recursos** — id, titulo, tipo (`'pdf'` | `'excel'` | `'word'` | `'enlace'`, con check constraint en minúsculas), categoria (`'usos_basicos'` | `'upselling'`), archivo_url (opcional), enlace_externo (opcional), dispositivo_id (FK → dispositivos, opcional), fecha_subida. Cada recurso tiene **archivo_url o enlace_externo, nunca ambos**. Se muestran en la página Instructivos, que primero pide elegir categoría; los archivos van al bucket `recursos`.
+**recursos** — id, titulo, tipo (`'pdf'` | `'excel'` | `'word'` | `'imagen'` | `'enlace'`, con check constraint en minúsculas), categoria (`'usos_basicos'` | `'upselling'`), grupo (`'uso_diario'` | `'gestion'` | `'manuales'` | `'carga_base'`), archivo_url (opcional), enlace_externo (opcional), dispositivo_id (FK → dispositivos, opcional), fecha_subida. Cada recurso tiene **archivo_url o enlace_externo, nunca ambos**. Se muestran en la página Instructivos, que primero pide elegir categoría y luego los agrupa en tres secciones colapsables (acordeón) en orden fijo: Uso diario → Gestión → Manuales → Carga Base. Los grupos arrancan colapsados (solo se ven los encabezados), muestran la cantidad de recursos en el título y se ocultan por completo si quedan vacíos (incluso al filtrar por buscador o tipo). Los archivos van al bucket `recursos`.
 
-**Flujo de subida de archivos de recursos:** el formulario del panel admin envía el archivo y el tipo a `POST /api/admin/recursos/archivo`, que valida la extensión según el tipo (pdf → `.pdf`; excel → `.xls/.xlsx/.csv`; word → `.doc/.docx`), limita a 20 MB, lo sube al bucket público `recursos` con nombre único y devuelve la URL pública. Al eliminar un recurso (o reemplazar su archivo al editar) se borra el archivo anterior del bucket.
+**Flujo de subida de archivos de recursos:** el formulario del panel admin envía el archivo y el tipo a `POST /api/admin/recursos/archivo`, que valida la extensión según el tipo (pdf → `.pdf`; excel → `.xls/.xlsx/.csv`; word → `.doc/.docx`; imagen → `.jpg/.jpeg/.png/.webp`, verificando además el mime-type), limita a 20 MB, lo sube al bucket público `recursos` con nombre único y devuelve la URL pública. Al eliminar un recurso (o reemplazar su archivo al editar) se borra el archivo anterior del bucket.
 
 **avisos** — id, titulo, mensaje. Se muestran como tarjetas destacadas al tope de Inicio; si la tabla está vacía (o no existe aún), la sección se oculta.
 

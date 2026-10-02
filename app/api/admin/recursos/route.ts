@@ -6,7 +6,7 @@ export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("recursos")
     .select(
-      "id, titulo, tipo, categoria, archivo_url, enlace_externo, dispositivo_id, fecha_subida, dispositivos(nombre_dispositivo)"
+      "id, titulo, tipo, categoria, grupo, archivo_url, enlace_externo, dispositivo_id, fecha_subida, dispositivos(nombre_dispositivo)"
     )
     .order("fecha_subida", { ascending: false });
 
